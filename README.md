@@ -22,7 +22,7 @@
 
 ## 对外演示结构
 
-当前仓库已经补了一套与 `asset-correlation-monitor` 同思路的双部署结构:
+当前仓库包含一套双部署演示结构:
 
 - `frontend/`
   - 独立 Next.js 演示前端
@@ -37,6 +37,11 @@
 
 - Cloudflare Pages: 放公开可浏览的模拟网页
 - Hugging Face Spaces: 放真正可填写、可生成剧本的 FastAPI Web 入口
+
+当前在线演示:
+
+- Hugging Face 应用: [https://rhozero-div-family-asset-playbook.hf.space/](https://rhozero-div-family-asset-playbook.hf.space/)
+- Hugging Face Space 页面: [https://huggingface.co/spaces/rhozero-div/family-asset-playbook](https://huggingface.co/spaces/rhozero-div/family-asset-playbook)
 
 如果文档与代码不一致,以**当前 Web 问卷实际产出的 YAML**和**当前引擎实际输出的剧本**为准。
 
