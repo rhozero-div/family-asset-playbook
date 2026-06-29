@@ -9,18 +9,35 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Push to Hugging Face Space
+      - name: Configure Hugging Face credentials
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git remote add hf "https://rhozero-div:${HF_TOKEN}@huggingface.co/spaces/rhozero-div/family-asset-playbook"
+          if [ -z "${HF_TOKEN}" ]; then
+            echo "HF_TOKEN secret is missing"
+            exit 1
+          fi
+          echo "::add-mask::${HF_TOKEN}"
+          git config --global credential.helper store
+          printf "https://rhozero-div:%s@huggingface.co\n" "${HF_TOKEN}" > "${HOME}/.git-credentials"
+
+      - name: Preflight Hugging Face repo access
+        run: |
+          git remote add hf https://huggingface.co/spaces/rhozero-div/family-asset-playbook
+          echo "Checking remote access to rhozero-div/family-asset-playbook ..."
+          git ls-remote hf HEAD
+
+      - name: Push to Hugging Face Space
+        run: |
           git push hf main --force
