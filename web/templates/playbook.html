@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (wrData && wrData.labels && wrData.labels.length > 0) {
       var wrCtx = document.getElementById('cashflowWithReturnChart');
       if (wrCtx) {
-        var wrAll = wrData.inflow.concat(wrData.outflow).concat(wrData.p10).concat(wrData.p25).concat(wrData.p50).concat(wrData.p75).concat(wrData.p90).concat(wrData.balance);
+        var wrAll = wrData.inflow.concat(wrData.outflow).concat(wrData.p10).concat(wrData.p25).concat(wrData.p50).concat(wrData.p75).concat(wrData.p90);
         var wrMin = Math.min.apply(null, wrAll);
         var wrMax = Math.max.apply(null, wrAll);
 
@@ -129,20 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'transparent',
                 borderWidth: 2,
-                pointRadius: 0,
-                pointHitRadius: 5,
-                fill: false,
-                tension: 0.1,
-                order: 2,
-              },
-              {
-                label: '无投资收益余额',
-                type: 'line',
-                data: wrData.balance,
-                borderColor: 'rgb(156, 163, 175)',
-                backgroundColor: 'transparent',
-                borderWidth: 1.5,
-                borderDash: [5, 4],
                 pointRadius: 0,
                 pointHitRadius: 5,
                 fill: false,

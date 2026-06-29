@@ -751,6 +751,7 @@ def _render_section_b(
     projections: tuple[NodeProjection, ...],
     yearly: tuple[YearlySnapshot, ...] = (),
     return_snapshots: tuple[YearlyReturnSnapshot, ...] = (),
+    bucket_result: BucketProjectionResult | None = None,
 ) -> str:
     future_cf = _future_cashflow_summary(profile, yearly)
 
@@ -814,8 +815,55 @@ def _render_section_b(
             "phaseCashFlow": phase_cash_flow,
             "obstacles": obstacle_amounts,
         })
-        # 含投资收益的现金流图(截断到最后一个节点)
-        if return_snapshots_truncated:
+        # 含投资收益的总资产图: 优先使用 bucket 级推演汇总,避免与 C5/C6 口径不一致
+        total_stats_truncated = tuple(
+            s for s in (bucket_result.total_stats if bucket_result else ())
+            if s.year <= chart_end_year
+        )
+        if total_stats_truncated:
+            ret_labels = [str(s.year) for s in total_stats_truncated]
+            total_returns_p50_by_year: dict[int, float] = {}
+            if bucket_result is not None:
+                for item in bucket_result.breakdowns:
+                    if item.year <= chart_end_year:
+                        total_returns_p50_by_year[item.year] = (
+                            total_returns_p50_by_year.get(item.year, 0.0) + item.returns_p50
+                        )
+            negative_return_years = [
+                str(year)
+                for year, total_return in sorted(total_returns_p50_by_year.items())
+                if total_return < 0
+            ]
+            note = (
+                "> 这张图展示的是家庭总资产路径。总资产上升，可能同时来自当年结余和投资结果；"
+                "其中某些年份，投资结果本身也可能为负。\n\n"
+            )
+            if negative_return_years:
+                note += (
+                    f"> 按居中情景口径，投资结果为负的年份包括："
+                    f"{'、'.join(negative_return_years)}。\n\n"
+                )
+            cashflow_with_return_data = json.dumps({
+                "labels": ret_labels,
+                "inflow": inflow,
+                "outflow": outflow,
+                "p10": [s.p10 for s in total_stats_truncated],
+                "p25": [s.p25 for s in total_stats_truncated],
+                "p50": [s.p50 for s in total_stats_truncated],
+                "p75": [s.p75 for s in total_stats_truncated],
+                "p90": [s.p90 for s in total_stats_truncated],
+            })
+            parts.append(
+                '<div class="chart-section">\n'
+                f'  <h3>家庭总资产路径（含现金流与投资结果，展示至 {chart_end_year} 年）</h3>\n'
+                '  <div class="chart-container">\n'
+                '    <canvas id="cashflowWithReturnChart"></canvas>\n'
+                '  </div>\n'
+                '</div>\n'
+                f'{note}'
+                f'<script id="cashflow-with-return-data" type="application/json">{cashflow_with_return_data}</script>\n\n'
+            )
+        elif return_snapshots_truncated:
             ret_labels = [str(s.year) for s in return_snapshots_truncated]
             cashflow_with_return_data = json.dumps({
                 "labels": ret_labels,
@@ -826,15 +874,15 @@ def _render_section_b(
                 "p50": [s.p50 for s in return_snapshots_truncated],
                 "p75": [s.p75 for s in return_snapshots_truncated],
                 "p90": [s.p90 for s in return_snapshots_truncated],
-                "balance": balance,
             })
             parts.append(
                 '<div class="chart-section">\n'
-                f'  <h3>现金流与资产余额时序（含投资收益，展示至 {chart_end_year} 年）</h3>\n'
+                f'  <h3>家庭总资产路径（含现金流与投资结果，展示至 {chart_end_year} 年）</h3>\n'
                 '  <div class="chart-container">\n'
                 '    <canvas id="cashflowWithReturnChart"></canvas>\n'
                 '  </div>\n'
                 '</div>\n'
+                '> 这张图展示的是家庭总资产路径。总资产上升，可能同时来自当年结余和投资结果；其中某些年份，投资结果本身也可能为负。\n\n'
                 f'<script id="cashflow-with-return-data" type="application/json">{cashflow_with_return_data}</script>\n\n'
             )
 
@@ -1448,7 +1496,7 @@ def render_playbook(
         _render_metadata(profile),
         _render_section_a3(profile, plan, projections, yearly_snapshots, bucket_result),
         _render_section_a(profile),
-        _render_section_b(profile, projections, yearly_snapshots, return_snapshots),
+        _render_section_b(profile, projections, yearly_snapshots, return_snapshots, bucket_result),
         _render_section_c(plan, profile.current_year, profile, yearly_snapshots),
         _render_section_c3(bucket_result, plan, chart_end_year),
         _render_stage_heatmap(bucket_result, plan, chart_end_year),
