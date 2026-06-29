@@ -15,31 +15,72 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Configure git identity
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - name: Configure Hugging Face credentials
+      - name: Install Hugging Face Hub client
+        run: |
+          python -m pip install --upgrade pip
+          pip install huggingface_hub
+
+      - name: Prepare upload snapshot
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "${GITHUB_SHA}" ]; then
+            echo "Missing GITHUB_SHA"
+            exit 1
+          fi
+          rm -rf /tmp/hf-upload
+          mkdir -p /tmp/hf-upload
+          rsync -a ./ /tmp/hf-upload/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.venv' \
+            --exclude '.pytest_cache' \
+            --exclude 'legacy' \
+            --exclude '**/__pycache__' \
+            --exclude 'frontend/node_modules' \
+            --exclude 'frontend/.next' \
+            --exclude 'frontend/out'
+          cat > /tmp/hf-upload/README.md <<'EOF'
+          ---
+          title: Family Asset Playbook
+          emoji: 💻
+          colorFrom: green
+          colorTo: purple
+          sdk: docker
+          pinned: false
+          ---
+
+          Family Asset Playbook Space mirror from GitHub.
+          EOF
+
+      - name: Upload snapshot to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
           if [ -z "${HF_TOKEN}" ]; then
             echo "HF_TOKEN secret is missing"
             exit 1
           fi
           echo "::add-mask::${HF_TOKEN}"
-          git config --global credential.helper store
-          printf "https://rhozero-div:%s@huggingface.co\n" "${HF_TOKEN}" > "${HOME}/.git-credentials"
+          python <<'PY'
+          import os
+          from huggingface_hub import HfApi
 
-      - name: Preflight Hugging Face repo access
-        run: |
-          git remote add hf https://huggingface.co/spaces/rhozero-div/family-asset-playbook
-          echo "Checking remote access to rhozero-div/family-asset-playbook ..."
-          git ls-remote hf HEAD
-
-      - name: Push to Hugging Face Space
-        run: |
-          git rev-parse --short HEAD
-          git branch --show-current || true
-          git push --verbose hf HEAD:main
+          token = os.environ["HF_TOKEN"]
+          sha = os.environ["GITHUB_SHA"][:7]
+          api = HfApi(token=token)
+          api.upload_folder(
+              repo_id="rhozero-div/family-asset-playbook",
+              repo_type="space",
+              folder_path="/tmp/hf-upload",
+              path_in_repo=".",
+              commit_message=f"Sync from GitHub {sha}",
+          )
+          print("Upload completed.")
+          PY
