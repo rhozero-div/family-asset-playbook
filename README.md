@@ -168,8 +168,10 @@ uvicorn web.app:app --host 0.0.0.0 --port 7860
 - 输出结构:[`handbook/05-output-structure.md`](handbook/05-output-structure.md)
 - 边界声明:[`handbook/06-boundaries.md`](handbook/06-boundaries.md)
 - 版本管理:[`handbook/07-versioning.md`](handbook/07-versioning.md)
-- 当前项目说明:[`docs/README.md`](docs/README.md)
+- 项目文档导航:[`docs/README.md`](docs/README.md)
 - 本地走查:[`docs/local-validation-walkthrough.md`](docs/local-validation-walkthrough.md)
+- 综合建议摘要逻辑:[`docs/summary-logic-guide.md`](docs/summary-logic-guide.md)
+- 图表与 QMC 逻辑:[`docs/chart-and-qmc-logic-guide.md`](docs/chart-and-qmc-logic-guide.md)
 - Cloudflare 演示前端:[`frontend/README.md`](frontend/README.md)
 
 ## 重要声明
