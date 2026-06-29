@@ -5,6 +5,11 @@
 
 <p>FAPM 是一套面向家庭客户的资产配置规划方法论。核心交付物是一份<strong>可塑性的 high-level 方案骨架</strong>。</p>
 
+{% if not storage_enabled %}
+<div class="success-banner">当前为公开演示模式：网页不会把匿名访客填写的客户信息保存到服务器，也不展示其他人的已填资料。</div>
+{% endif %}
+
+{% if storage_enabled %}
 <h3>客户列表</h3>
 
 <table class="client-table">
@@ -42,6 +47,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% endif %}
 
 <h3>快速入口</h3>
 <ul>

@@ -74,6 +74,27 @@ def save_yaml_and_generate(
         tmp_path.unlink(missing_ok=True)
 
 
+def generate_playbook_from_yaml(
+    yaml_text: str, current_year: int,
+) -> tuple[bool, str, str]:
+    """不落盘保存客户资料,仅基于输入 YAML 生成剧本。"""
+    ok, tmp_or_err, error_msg = receive_yaml_text(yaml_text)
+    if not ok:
+        return False, "", error_msg
+    tmp_path = Path(tmp_or_err)
+    try:
+        playbook_md = _generate_playbook(
+            profile_path=tmp_path,
+            handbook_dir=PROJECT_ROOT / "handbook",
+            current_year=current_year,
+        )
+        return True, playbook_md, ""
+    except Exception as e:
+        return False, "", f"生成剧本失败: {e}"
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 def _resolve_code(yaml_text: str, client_code: str, profiles_dir: Path) -> str:
     """确定客户代码: 优先使用传入 code; 其次查找同名已有客户; 最后新分配。"""
     import json, yaml

@@ -13,7 +13,7 @@
     <h1><a href="/">FAPM 家庭资产配置剧本方法论</a></h1>
     <nav>
       <a href="/questionnaire">生成剧本</a>
-      <a href="/">客户列表</a>
+      <a href="/">{% if storage_enabled %}客户列表{% else %}首页{% endif %}</a>
     </nav>
   </header>
 

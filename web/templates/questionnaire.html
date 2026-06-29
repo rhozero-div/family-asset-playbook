@@ -3,6 +3,10 @@
 {% block content %}
 <h2>客户问卷</h2>
 
+{% if not storage_enabled %}
+<div class="success-banner">公开演示模式：匿名访客填写的信息不会保存到服务器；如需结果，请直接点击“生成剧本”。</div>
+{% endif %}
+
 {% if error %}
 <div class="error-banner"><strong>错误:</strong> {{ error }}</div>
 {% endif %}
