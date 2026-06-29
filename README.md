@@ -149,6 +149,8 @@ uvicorn web.app:app --host 0.0.0.0 --port 7860
 
 - 这条 HF 入口复用当前 FastAPI Web
 - GitHub push 到 `main` 后,会通过 `HF_TOKEN` 自动同步到同名 Hugging Face Space
+- 公开演示默认关闭服务器端持久化,匿名访客填写的信息不会保存到服务器,也不会展示其他人的已填资料
+- 如需在你自己的本地或私有环境中保存客户资料,可在启动前设置 `FAPM_ENABLE_SERVER_STORAGE=1`; 启用后会把客户 YAML 与索引写入 `profiles/`
 - 若未额外安装 `qmc`,剧本仍可生成,但会降级为不展示收益扇形图的版本
 
 ## 文档导航
