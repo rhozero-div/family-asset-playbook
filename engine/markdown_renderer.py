@@ -852,6 +852,7 @@ def _render_section_b(
                 "p50": [s.p50 for s in total_stats_truncated],
                 "p75": [s.p75 for s in total_stats_truncated],
                 "p90": [s.p90 for s in total_stats_truncated],
+                "balance": balance,
             })
             parts.append(
                 '<div class="chart-section">\n'

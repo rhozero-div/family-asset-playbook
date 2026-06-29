@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (wrData && wrData.labels && wrData.labels.length > 0) {
       var wrCtx = document.getElementById('cashflowWithReturnChart');
       if (wrCtx) {
-        var wrAll = wrData.inflow.concat(wrData.outflow).concat(wrData.p10).concat(wrData.p25).concat(wrData.p50).concat(wrData.p75).concat(wrData.p90);
+        var wrAll = wrData.inflow.concat(wrData.outflow).concat(wrData.p10).concat(wrData.p25).concat(wrData.p50).concat(wrData.p75).concat(wrData.p90).concat(wrData.balance || []);
         var wrMin = Math.min.apply(null, wrAll);
         var wrMax = Math.max.apply(null, wrAll);
 
@@ -134,6 +134,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 fill: false,
                 tension: 0.1,
                 order: 2,
+              },
+              {
+                label: '不含投资结果的累计余额（现金流参考线）',
+                type: 'line',
+                data: wrData.balance,
+                borderColor: 'rgb(71, 85, 105)',
+                backgroundColor: 'transparent',
+                borderWidth: 2.5,
+                borderDash: [8, 5],
+                pointRadius: 0,
+                pointHitRadius: 5,
+                fill: false,
+                tension: 0.1,
+                order: 6,
               },
               {
                 label: '现金流入',

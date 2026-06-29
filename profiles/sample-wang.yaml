@@ -171,6 +171,7 @@ assets:
       estimated_value: 8000000
       outstanding_mortgage: 1500000
   financial:
+    total_value: 1500000
     fixed_income:
       total_value: 800000
       breakdown_hint: "银行理财 + 货币基金"

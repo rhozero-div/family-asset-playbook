@@ -472,6 +472,8 @@ def _build_strategies(profile_override: dict | None, risk_preference: str = "bal
 def _return_strategy_for(years: int, strategies: list | None = None) -> tuple[float, float, float, float]:
     if strategies is None:
         strategies = _RETURN_STRATEGIES
+    if years <= 0:
+        return strategies[0][2]
     for lo, hi, w in strategies:
         if lo < years <= hi:
             return w
@@ -1022,12 +1024,56 @@ def project_buckets_with_returns(
         key=lambda b: b.withdrawal_year,
     )
 
-    # 6. 逐年推演: 年初记录起点 -> 全年收益 -> 年末再平衡与现金流分配 -> 年末事件提取
+    def _active_bucket_indices(year: int) -> list[int]:
+        """返回给定年份仍参与资金滚动的 bucket 索引。"""
+        active: list[int] = []
+        for idx, bucket in enumerate(buckets):
+            if bucket.event_id is not None and bucket.withdrawal_year is not None and year > bucket.withdrawal_year:
+                continue
+            active.append(idx)
+        return active
+
+    def _apply_negative_net_cashflow(year_idx: int, deficit: float, active_indices: list[int]) -> None:
+        """把负现金流按当前余额比例扣减到各 bucket，总额与参考线保持一致。
+
+        若当年总正余额不足以覆盖 deficit，则把剩余缺口压到富余资金；
+        若无富余资金，则压到最后一个仍 active 的 bucket，以允许总资产为负。
+        """
+        if deficit <= 0 or not active_indices:
+            return
+
+        positive_indices = [
+            idx for idx in active_indices
+            if float(bucket_balances[idx].mean()) > 0 or (bucket_balances[idx] > 0).any()
+        ]
+        if positive_indices:
+            positive_total = np.sum([np.maximum(bucket_balances[idx], 0.0) for idx in positive_indices], axis=0)
+            covered = np.minimum(deficit, positive_total)
+            positive_total_safe = np.where(positive_total > 0, positive_total, 1.0)
+            for idx in positive_indices:
+                share = covered * np.maximum(bucket_balances[idx], 0.0) / positive_total_safe
+                bucket_balances[idx] = bucket_balances[idx] - share
+                year_cash_paths[buckets[idx].name][:, year_idx] -= share
+            residual = deficit - covered
+        else:
+            residual = np.full(mc.n_paths, deficit, dtype=np.float64)
+
+        if residual.any():
+            fallback_idx = (
+                surplus_idx
+                if surplus_idx is not None and surplus_idx in active_indices
+                else active_indices[-1]
+            )
+            bucket_balances[fallback_idx] = bucket_balances[fallback_idx] - residual
+            year_cash_paths[buckets[fallback_idx].name][:, year_idx] -= residual
+
+    # 6. 逐年推演: 年初记录起点 -> 全年收益 -> 年末净现金流 -> 应急再平衡 -> 年末事件提取
     for yr_idx in range(n_years):
         _, _, annual_net = yearly_data[yr_idx]
         yr = current_year + yr_idx
         bucket_rv_this_year = bucket_yearly_rv[yr_idx]
         z = mc.z[:, yr_idx]
+        active_indices = _active_bucket_indices(yr)
 
         for bi, b in enumerate(buckets):
             year_starting_paths[b.name][:, yr_idx] = bucket_balances[bi]
@@ -1040,8 +1086,11 @@ def project_buckets_with_returns(
             bucket_growth_factors[b.name] = bucket_growth_factors[b.name] * gross
             bucket_balances[bi] = bucket_balances[bi] * gross
 
+        if annual_net < 0:
+            _apply_negative_net_cashflow(yr_idx, float(-annual_net), active_indices)
+
         annual_contribution = max(annual_net, 0.0)
-        emergency_excess = np.zeros(mc.n_paths)
+        emergency_excess = np.zeros(mc.n_paths, dtype=np.float64)
         if emergency_idx is not None and emergency_target > 0:
             excess = bucket_balances[emergency_idx] - emergency_target
             emergency_excess = np.maximum(excess, 0.0)

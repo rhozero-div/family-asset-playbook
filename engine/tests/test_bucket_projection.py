@@ -15,6 +15,7 @@
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,6 +28,7 @@ from engine.projection import (  # noqa: E402
     BucketAnnualizedReturnStats,
     BucketYearlyStats,
     BucketProjectionResult,
+    project_yearly,
     project_to_nodes,
     project_buckets_with_returns,
 )
@@ -341,6 +343,12 @@ class TestBucketLevelStrategy(unittest.TestCase):
         # 1 年: 固收 87.5%, 8 年: 固收 38%
         self.assertGreater(w1[0], w8[0], f"1年固收 {w1[0]} 应 > 8年固收 {w8[0]}")
 
+    def test_zero_year_to_withdrawal_stays_in_nearest_conservative_band(self):
+        """到提取/退休当年(0年剩余期限)不应错误跳到超远期进取档。"""
+        from engine.projection import _bucket_weights
+        w0 = _bucket_weights("富余资金", 0)
+        self.assertEqual(w0, (87.5, 5.0, 2.5, 5.0))
+
     def test_special_buckets_fixed_weights(self):
         """应急/富余/CI 等特殊 bucket 用固定策略."""
         from engine.projection import _bucket_weights
@@ -506,6 +514,49 @@ class TestBucketBreakdown(unittest.TestCase):
             self.assertIsNotNone(stats_prob)
             self.assertEqual(b.full_probability, stats_prob,
                 f"{b.bucket_name} {b.year}: breakdown full_prob {b.full_probability} != stats {stats_prob}")
+
+
+class TestTotalPathConservation(unittest.TestCase):
+    def test_zero_return_bucket_total_matches_yearly_balance_even_with_negative_cashflow(self):
+        """零收益零波动下，bucket 总资产路径必须与不投资参考线完全一致。"""
+        sample_text = SAMPLE_YAML.read_text(encoding="utf-8")
+        injected = (
+            sample_text
+            .replace("monthly_expense: 8000", "monthly_expense: 38000", 1)
+            .replace("monthly_expense: 6000", "monthly_expense: 26000", 1)
+        )
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as f:
+            f.write(injected)
+            temp_path = Path(f.name)
+        try:
+            profile = load_profile(temp_path, current_year=2026)
+            assumptions = read_assumptions(ASSUMPTIONS_PATH)
+            assumptions = replace(
+                assumptions,
+                fixed_income_return=0.0,
+                fixed_income_volatility=0.0,
+                equity_return=0.0,
+                equity_volatility=0.0,
+                insurance_return=0.0,
+                insurance_volatility=0.0,
+                alternatives_return=0.0,
+                alternatives_volatility=0.0,
+            )
+            projections = project_to_nodes(profile)
+            plan = allocate(profile, projections, assumptions)
+            yearly = project_yearly(profile)
+            result = project_buckets_with_returns(
+                profile, assumptions, plan, n_sobol_points=64, seed=42
+            )
+            total_by_year = {s.year: s for s in result.total_stats}
+            self.assertTrue(any(s.net_cashflow < 0 for s in yearly), "测试档案应出现负现金流年份")
+            for snap in yearly[:10]:
+                total = total_by_year[snap.year]
+                self.assertAlmostEqual(total.p50, round(snap.asset_balance, 2), delta=1.0)
+                self.assertAlmostEqual(total.p10, round(snap.asset_balance, 2), delta=1.0)
+                self.assertAlmostEqual(total.p90, round(snap.asset_balance, 2), delta=1.0)
+        finally:
+            temp_path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
