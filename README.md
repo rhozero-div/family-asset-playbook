@@ -6,6 +6,10 @@
 
 一套给顾问使用的家庭资产规划工作流。顾问通过结构化问卷采集家庭信息,系统生成一份可交付给客户阅读和讨论的剧本。
 
+在线演示:
+
+- [https://rhozero-div-family-asset-playbook.hf.space/](https://rhozero-div-family-asset-playbook.hf.space/)
+
 它**不构成投资建议**,也**不是选品工具**。当前产品形态更接近:
 
 - 顾问端:采集、校验、推演、生成剧本
@@ -37,10 +41,6 @@
 
 - Cloudflare Pages: 放公开可浏览的模拟网页
 - Hugging Face Spaces: 放真正可填写、可生成剧本的 FastAPI Web 入口
-
-当前在线演示:
-
-- Hugging Face 应用: [https://rhozero-div-family-asset-playbook.hf.space/](https://rhozero-div-family-asset-playbook.hf.space/)
 
 如果文档与代码不一致,以**当前 Web 问卷实际产出的 YAML**和**当前引擎实际输出的剧本**为准。
 
