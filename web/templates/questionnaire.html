@@ -255,6 +255,26 @@
           </select>
         </div>
       </div>
+      <p class="hint">这里选择的是阶段权重模板。只要你还没有手动修改第 8 部分的阶段权重，切换这里会自动回填第 8 部分。</p>
+    </div>
+
+    <div class="subpanel-card">
+      <h4 class="panel-subtitle">三套默认阶段权重</h4>
+      <p class="hint">以下是顾问和客户都能直接看到的默认模板。若第 8 部分被手动修改，下面模板不会自动改变，但可随时重置回当前风险偏好。</p>
+      <div class="assumption-grid">
+        <div class="assumption-item">
+          <label>保守</label>
+          <div id="risk-template-conservative" class="hint"></div>
+        </div>
+        <div class="assumption-item">
+          <label>平衡</label>
+          <div id="risk-template-balanced" class="hint"></div>
+        </div>
+        <div class="assumption-item">
+          <label>进取</label>
+          <div id="risk-template-aggressive" class="hint"></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -337,6 +357,10 @@
 
     <div class="subpanel-card">
       <h4 class="panel-subtitle">阶段权重分配</h4>
+      <p class="hint" id="phase-sync-status">当前未绑定风险偏好模板。</p>
+      <div class="field-row">
+        <button type="button" id="phase-reset-btn" class="btn-secondary">重置为当前风险偏好模板</button>
+      </div>
       <p class="hint">每行权重之和需等于 1 (100%)。</p>
       <div class="phase-table">
         <div class="phase-header">

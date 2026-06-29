@@ -6,6 +6,28 @@
  */
 
 var _eventSeq = {};
+var _phaseWeightsManuallyEdited = false;
+
+var RISK_PHASE_TEMPLATES = {
+  conservative: [
+    { label: '近期', maxYears: 3, weights: [0.90, 0.05, 0.025, 0.025] },
+    { label: '中期', maxYears: 7, weights: [0.70, 0.20, 0.05, 0.05] },
+    { label: '远期', maxYears: 10, weights: [0.50, 0.35, 0.075, 0.075] },
+    { label: '超远期', maxYears: 99, weights: [0.35, 0.50, 0.075, 0.075] }
+  ],
+  balanced: [
+    { label: '近期', maxYears: 3, weights: [0.875, 0.05, 0.025, 0.05] },
+    { label: '中期', maxYears: 7, weights: [0.60, 0.30, 0.075, 0.075] },
+    { label: '远期', maxYears: 10, weights: [0.40, 0.45, 0.10, 0.10] },
+    { label: '超远期', maxYears: 99, weights: [0.225, 0.575, 0.075, 0.125] }
+  ],
+  aggressive: [
+    { label: '近期', maxYears: 3, weights: [0.85, 0.08, 0.02, 0.05] },
+    { label: '中期', maxYears: 7, weights: [0.50, 0.40, 0.05, 0.05] },
+    { label: '远期', maxYears: 10, weights: [0.30, 0.55, 0.075, 0.075] },
+    { label: '超远期', maxYears: 99, weights: [0.15, 0.70, 0.075, 0.075] }
+  ]
+};
 
 function repeat(str, n) {
   var out = '';
@@ -119,6 +141,112 @@ function svi(id, value) {
 function sviByClass(cls, value) {
   var el = document.querySelector('.' + cls);
   if (el) el.value = value;
+}
+
+function phaseFieldValue(idx, suffix) {
+  var el = document.querySelector('.as-ph-' + idx + '-' + suffix);
+  return floatVal(el);
+}
+
+function phaseMaxValue(idx) {
+  var el = document.querySelector('.as-ph-max-' + idx);
+  return numVal(el);
+}
+
+function formatPct(value) {
+  return Math.round(value * 1000) / 10 + '%';
+}
+
+function renderRiskTemplateSummaries() {
+  ['conservative', 'balanced', 'aggressive'].forEach(function(key) {
+    var host = document.getElementById('risk-template-' + key);
+    if (!host) return;
+    var template = RISK_PHASE_TEMPLATES[key];
+    host.innerHTML = template.map(function(item) {
+      return item.label + '≤' + item.maxYears + '年: '
+        + '固收' + formatPct(item.weights[0]) + ' / '
+        + '权益' + formatPct(item.weights[1]) + ' / '
+        + '保险' + formatPct(item.weights[2]) + ' / '
+        + '另类' + formatPct(item.weights[3]);
+    }).join('<br>');
+  });
+}
+
+function applyRiskTemplate(riskKey, options) {
+  options = options || {};
+  var template = RISK_PHASE_TEMPLATES[riskKey];
+  if (!template) return false;
+  template.forEach(function(item, idx) {
+    sviByClass('as-ph-max-' + idx, item.maxYears);
+    sviByClass('as-ph-' + idx + '-fi', item.weights[0]);
+    sviByClass('as-ph-' + idx + '-eq', item.weights[1]);
+    sviByClass('as-ph-' + idx + '-ins', item.weights[2]);
+    sviByClass('as-ph-' + idx + '-alt', item.weights[3]);
+  });
+  if (!options.preserveManualFlag) _phaseWeightsManuallyEdited = false;
+  updatePhaseSyncStatus();
+  return true;
+}
+
+function currentPhaseMatchesTemplate(riskKey) {
+  var template = RISK_PHASE_TEMPLATES[riskKey];
+  if (!template) return false;
+  for (var idx = 0; idx < template.length; idx++) {
+    var item = template[idx];
+    if (phaseMaxValue(idx) !== item.maxYears) return false;
+    if (phaseFieldValue(idx, 'fi') !== item.weights[0]) return false;
+    if (phaseFieldValue(idx, 'eq') !== item.weights[1]) return false;
+    if (phaseFieldValue(idx, 'ins') !== item.weights[2]) return false;
+    if (phaseFieldValue(idx, 'alt') !== item.weights[3]) return false;
+  }
+  return true;
+}
+
+function updatePhaseSyncStatus() {
+  var statusEl = document.getElementById('phase-sync-status');
+  var resetBtn = document.getElementById('phase-reset-btn');
+  var riskEl = document.getElementById('risk-tolerance');
+  if (!statusEl || !riskEl) return;
+  var riskLabelMap = {
+    conservative: '保守',
+    balanced: '平衡',
+    aggressive: '进取'
+  };
+  if (!riskEl.value) {
+    statusEl.textContent = '当前未绑定风险偏好模板。';
+    if (resetBtn) resetBtn.disabled = true;
+    return;
+  }
+  if (_phaseWeightsManuallyEdited) {
+    statusEl.textContent = '第 8 部分的阶段权重已手动修改，当前不再自动跟随“' + riskLabelMap[riskEl.value] + '”模板。';
+    if (resetBtn) resetBtn.disabled = false;
+    return;
+  }
+  statusEl.textContent = '第 8 部分的阶段权重当前跟随“' + riskLabelMap[riskEl.value] + '”模板。';
+  if (resetBtn) resetBtn.disabled = false;
+}
+
+function syncRiskToPhasesIfAllowed() {
+  var riskEl = document.getElementById('risk-tolerance');
+  if (!riskEl || !riskEl.value) {
+    updatePhaseSyncStatus();
+    return;
+  }
+  if (_phaseWeightsManuallyEdited) {
+    updatePhaseSyncStatus();
+    return;
+  }
+  applyRiskTemplate(riskEl.value);
+}
+
+function markPhaseWeightsEdited() {
+  var riskEl = document.getElementById('risk-tolerance');
+  if (riskEl && riskEl.value && currentPhaseMatchesTemplate(riskEl.value)) {
+    _phaseWeightsManuallyEdited = false;
+  } else {
+    _phaseWeightsManuallyEdited = true;
+  }
+  updatePhaseSyncStatus();
 }
 
 function clearRow(row) {
@@ -806,6 +934,8 @@ function restoreAssumptions(data) {
         sviByClass('as-ph-' + idx + '-alt', phase.weights[3]);
       }
     });
+    var riskEl = document.getElementById('risk-tolerance');
+    _phaseWeightsManuallyEdited = !(riskEl && riskEl.value && currentPhaseMatchesTemplate(riskEl.value));
   }
   if (assumptions.projection && assumptions.projection.post_retirement_horizon_years != null) {
     sviByClass('as-retire-horizon', assumptions.projection.post_retirement_horizon_years);
@@ -881,6 +1011,12 @@ function restoreFormFromData(data) {
     svi('risk-tolerance', data.advisor_assessment.risk_tolerance);
   }
   restoreAssumptions(data);
+  var riskEl = document.getElementById('risk-tolerance');
+  if (riskEl && riskEl.value && (!data.assumptions || !data.assumptions.phases)) {
+    applyRiskTemplate(riskEl.value, { preserveManualFlag: false });
+  } else {
+    updatePhaseSyncStatus();
+  }
   updateMeasurementEndYearConstraints();
   syncSavingsDropdown();
   updateFamilyTotals();
@@ -970,6 +1106,36 @@ function bindStaticEvents() {
       el.addEventListener('change', updateMeasurementEndYearConstraints);
     }
   });
+
+  var riskEl = document.getElementById('risk-tolerance');
+  if (riskEl && riskEl.dataset.boundRiskTemplate !== '1') {
+    riskEl.dataset.boundRiskTemplate = '1';
+    riskEl.addEventListener('change', syncRiskToPhasesIfAllowed);
+    riskEl.addEventListener('input', syncRiskToPhasesIfAllowed);
+  }
+
+  document.querySelectorAll(
+    '.as-ph-max-0, .as-ph-max-1, .as-ph-max-2, .as-ph-max-3,' +
+    ' .as-ph-0-fi, .as-ph-0-eq, .as-ph-0-ins, .as-ph-0-alt,' +
+    ' .as-ph-1-fi, .as-ph-1-eq, .as-ph-1-ins, .as-ph-1-alt,' +
+    ' .as-ph-2-fi, .as-ph-2-eq, .as-ph-2-ins, .as-ph-2-alt,' +
+    ' .as-ph-3-fi, .as-ph-3-eq, .as-ph-3-ins, .as-ph-3-alt'
+  ).forEach(function(el) {
+    if (el.dataset.boundPhaseEdit === '1') return;
+    el.dataset.boundPhaseEdit = '1';
+    el.addEventListener('input', markPhaseWeightsEdited);
+    el.addEventListener('change', markPhaseWeightsEdited);
+  });
+
+  var resetBtn = document.getElementById('phase-reset-btn');
+  if (resetBtn && resetBtn.dataset.boundPhaseReset !== '1') {
+    resetBtn.dataset.boundPhaseReset = '1';
+    resetBtn.addEventListener('click', function() {
+      var risk = document.getElementById('risk-tolerance');
+      if (!risk || !risk.value) return;
+      applyRiskTemplate(risk.value);
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -992,11 +1158,17 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {}
   });
 
+  renderRiskTemplateSummaries();
   bindStaticEvents();
   refreshMemberDrivenSections();
   tryRestoreForm();
   autoPrefillSample();
   bindStaticEvents();
+  if (!document.getElementById('sample-data') || document.getElementById('sample-data').textContent === '{}') {
+    syncRiskToPhasesIfAllowed();
+  } else {
+    updatePhaseSyncStatus();
+  }
   updateMeasurementEndYearConstraints();
   syncSavingsDropdown();
   updateFamilyTotals();

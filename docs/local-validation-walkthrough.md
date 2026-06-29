@@ -23,7 +23,7 @@
 在仓库根目录运行:
 
 ```bash
-uvicorn web.app:app --reload
+FAPM_ENABLE_SERVER_STORAGE=1 uvicorn web.app:app --reload
 ```
 
 打开浏览器访问:
@@ -31,6 +31,11 @@ uvicorn web.app:app --reload
 ```text
 http://127.0.0.1:8000/questionnaire
 ```
+
+这不是可选项,而是当前项目的运行规则:
+
+- 只要是给你自己本地使用的 `localhost` 预览,默认必须启用 `FAPM_ENABLE_SERVER_STORAGE=1`
+- 只有公开演示、匿名试用、或明确要求不落盘时,才应省略该变量并运行在不可保存模式
 
 ---
 
