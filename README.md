@@ -41,7 +41,6 @@
 当前在线演示:
 
 - Hugging Face 应用: [https://rhozero-div-family-asset-playbook.hf.space/](https://rhozero-div-family-asset-playbook.hf.space/)
-- Hugging Face Space 页面: [https://huggingface.co/spaces/rhozero-div/family-asset-playbook](https://huggingface.co/spaces/rhozero-div/family-asset-playbook)
 
 如果文档与代码不一致,以**当前 Web 问卷实际产出的 YAML**和**当前引擎实际输出的剧本**为准。
 
