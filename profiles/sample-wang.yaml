@@ -1,0 +1,210 @@
+# 家庭资产配置剧本方法论 v0.1 — 示例客户档案
+# 仅供方法论演示,所有数据均为虚构
+profile_version: "0.1"
+schema_version: "handbook-v0.1"
+
+# === 1. 家庭情况 ===
+family:
+  members:
+    - name: "王先生"
+      age: 38
+      role: "primary_breadwinner"
+      annual_income: 800000
+      monthly_expense: 15000
+      retirement_age: 60
+      retirement_pension: 5000
+      retirement_annuity: 2000
+      retirement_expense_coeff: 0.7
+      term_life_coverage: 0
+      term_life_premium: 0
+      term_life_pay_years: 0
+      critical_illness_coverage: 500000
+      critical_illness_premium: 0
+      critical_illness_pay_years: 0
+      medical_covered: false
+      medical_premium: 0
+      medical_pay_years: 0
+      hci_coverage: 0
+      healthcare_starting_annual: 20000
+      healthcare_growth_rate: 0.05
+      healthcare_annual_cap: 80000
+      reimbursement_rate: 0.80
+    - name: "王太太"
+      age: 36
+      role: "secondary_breadwinner"
+      annual_income: 400000
+      monthly_expense: 10000
+      retirement_age: 55
+      retirement_pension: 0
+      retirement_annuity: 1000
+      retirement_expense_coeff: 0.7
+      term_life_coverage: 0
+      term_life_premium: 0
+      term_life_pay_years: 0
+      critical_illness_coverage: 0
+      critical_illness_premium: 0
+      critical_illness_pay_years: 0
+      medical_covered: false
+      medical_premium: 0
+      medical_pay_years: 0
+      hci_coverage: 0
+      healthcare_starting_annual: 0
+      healthcare_growth_rate: 0.05
+      healthcare_annual_cap: 0
+      reimbursement_rate: 0.80
+    - name: "王小朵"
+      age: 6
+      role: "dependent"
+      annual_income: 0
+      monthly_expense: 0
+      retirement_age: 60
+      retirement_pension: 0
+      retirement_annuity: 0
+      retirement_expense_coeff: 0.7
+      term_life_coverage: 0
+      term_life_premium: 0
+      term_life_pay_years: 0
+      critical_illness_coverage: 0
+      critical_illness_premium: 0
+      critical_illness_pay_years: 0
+      medical_covered: false
+      medical_premium: 0
+      medical_pay_years: 0
+      hci_coverage: 0
+      healthcare_starting_annual: 0
+      healthcare_growth_rate: 0.05
+      healthcare_annual_cap: 0
+      reimbursement_rate: 0.0
+  residence: "上海"
+  cost_of_living_level: "high"
+  dependents_in_law:
+    - name: "王父"
+      relation: "father_in_law"
+      age: 68
+      health: "fair"
+
+# === 2. 收入情况及预期 ===
+income:
+  total_annual_income: 1200000      # 王先生80万 + 王太太40万
+  sources:
+    - type: "salary"
+      owner: "王先生"
+      annual_amount: 800000
+      stability: "stable"          # stable / variable / declining
+    - type: "salary"
+      owner: "王太太"
+      annual_amount: 400000
+      stability: "stable"
+  expectations:
+    horizon_years: 10
+    annual_growth_rate: 0.04       # 4% 年化
+    confidence: "medium"           # low / medium / high
+  monthly_living_expense: 25000    # 家庭月度生活支出(不含房贷)
+  retirement:
+    monthly_pension: 5000
+    monthly_annuity: 3000
+    monthly_expense: 15000
+    healthcare:
+      starting_annual: 20000
+      growth_rate: 0.05
+      annual_cap: 80000
+
+# === 3. 支持情况及预期 ===
+support:
+  inheritance_expected:
+    - from: "王父"
+      timing: "uncertain"          # near / medium / far / uncertain
+      estimated_range: [500000, 1500000]
+  one_time_income:
+    - description: "王先生预期股票期权变现"
+      timing_year: 2028
+      estimated_range: [1000000, 2000000]
+  one_time_expense:
+    - description: "王小朵本科留学(美国)"
+      timing_year: 2035
+      estimated_range: [1500000, 2500000]
+
+# === 4. 重要家庭规划(事件节点) ===
+events:
+  - id: "buy_improvement_house"
+    type: "housing"
+    description: "改善型购房"
+    timing_year: 2029
+    estimated_amount: 3000000
+    certainty: "high"               # high / medium / low
+  - id: "daughter_high_school"
+    type: "education"
+    description: "王小朵国际高中"
+    timing_year: 2032
+    estimated_amount: 800000
+    certainty: "high"
+  - id: "daughter_college_abroad"
+    type: "education"
+    description: "王小朵本科留学"
+    timing_year: 2035
+    estimated_amount: 2000000
+    certainty: "medium"
+  - id: "daughter_marriage_house"
+    type: "housing"
+    description: "王小朵成家买房首付帮衬"
+    timing_year: 2040
+    estimated_amount: 1500000
+    certainty: "low"
+  - id: "daughter_other"
+    type: "other"
+    description: "王小朵其他大额支持(婚礼等)"
+    timing_year: 2040
+    estimated_amount: 300000
+    certainty: "low"
+  - id: "mr_wang_retirement"
+    type: "retirement"
+    description: "王先生退休"
+    timing_year: 2048
+    owner: "王先生"
+    expected_replacement_ratio: 0.6
+    certainty: "medium"
+
+# === 5. 现有资产 ===
+assets:
+  real_estate:
+    primary_residence:
+      estimated_value: 8000000
+      outstanding_mortgage: 1500000
+  financial:
+    fixed_income:
+      total_value: 800000
+      breakdown_hint: "银行理财 + 货币基金"
+    equity:
+      total_value: 600000
+      breakdown_hint: "偏股公募 + 个股"
+    insurance:
+      term_life_coverage: 0                # 定期寿险保额
+      term_life_premium: 0                 # 定期寿险年缴保费
+      critical_illness_coverage: 500000    # 重疾险保额
+      critical_illness_premium: 0          # 重疾险年缴保费(已缴清)
+      medical_covered: false               # 是否配置医疗险
+      medical_premium: 0
+      savings_value: 200000                # 储蓄型保险现金价值(终身寿)
+      savings_premium: 0                   # 储蓄险年缴保费(已缴清)
+      breakdown_hint: "重疾险(已缴清) + 终身寿(已缴清)"
+    alternatives:
+      total_value: 100000
+      breakdown_hint: "黄金 ETF"
+  overseas_module_enabled: false     # 启用条件:见 handbook/01-input-schema.md
+  liquidity_reserve_months: 6        # 当前流动性可支撑月数
+  liabilities:
+    - type: "mortgage"
+      outstanding: 1500000
+      monthly_payment: 18000
+      remaining_years: 12
+
+# === 8. 推演假设(可选) ===
+assumptions:
+  projection:
+    reimbursement_rate: 0.80
+
+# === 顾问评估(可选,人工补全) ===
+advisor_assessment:
+  risk_tolerance: "balanced"        # conservative / balanced / aggressive
+  knowledge_level: "medium"         # low / medium / high
+  notes: "王先生偏保守,但能接受教育金部分进取"

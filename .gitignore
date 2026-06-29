@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# 编辑器 / 系统
+.DS_Store
+.vscode/
+.idea/
+
+# 虚拟环境
+venv/
+.env/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# 构建产物
+dist/
+build/
+
+# 生成的客户档案(仅保留示例)
+profiles/*.yaml
+!profiles/sample-wang.yaml
+!profiles/.gitkeep
+
+# 本地留档,不上传
+legacy/

@@ -1,0 +1,24 @@
+/* 资产骨架可视化进度条 */
+.skeleton-bar {
+  display: flex;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+  background: #f7fafc;
+}
+.skeleton-bar .seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0 0.5rem;
+  border-right: 2px solid #fff;
+}
+.skeleton-bar .seg:last-child { border-right: none; }
+.skeleton-bar .seg.fixed_income { background: #2b6cb0; }
+.skeleton-bar .seg.equity { background: #38a169; }
+.skeleton-bar .seg.insurance { background: #d69e2e; }
+.skeleton-bar .seg.alternatives { background: #805ad5; }

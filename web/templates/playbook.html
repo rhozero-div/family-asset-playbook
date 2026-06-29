@@ -1,0 +1,746 @@
+{% extends "base.html" %}
+{% block title %}FAPM — 客户剧本{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+{% if client_code %}
+<div class="success-banner">
+  客户 {{ client_code }}（{{ client_name }}）已保存。
+  <a href="/questionnaire/load/{{ client_code }}" style="margin-left: 0.5rem;">编辑问卷</a>
+  <a href="/" style="margin-left: 0.5rem;">← 客户列表</a>
+</div>
+{% endif %}
+<div class="playbook-actions">
+  <a href="/" class="btn-secondary">← 客户列表</a>
+  <a href="data:text/markdown;charset=utf-8,{{ playbook_md|urlencode }}" download="playbook.md" class="btn-secondary">📥 下载 Markdown</a>
+</div>
+
+<div class="playbook-page">
+  <div class="playbook-main">
+    <div class="playbook-hero">
+      <div class="playbook-hero-title">家庭资产配置剧本</div>
+      <div class="playbook-hero-desc">按“客户概览 → 综合建议 → 资产推演 → 执行方案”的顺序阅读，会更容易把握整体逻辑。</div>
+    </div>
+
+    <article class="playbook" id="playbook-article">
+      {{ playbook_html | safe }}
+    </article>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var articleEl = document.getElementById('playbook-article');
+  if (articleEl) {
+    var slugCounts = {};
+    var headingNodes = articleEl.querySelectorAll('h1, h2, h3');
+
+    function slugify(text) {
+      var base = (text || 'section')
+        .trim()
+        .toLowerCase()
+        .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'section';
+      slugCounts[base] = (slugCounts[base] || 0) + 1;
+      return slugCounts[base] > 1 ? base + '-' + slugCounts[base] : base;
+    }
+
+    headingNodes.forEach(function(node) {
+      if (!node.id) node.id = slugify(node.textContent);
+    });
+
+    var h2s = Array.from(articleEl.querySelectorAll('h2'));
+    h2s.forEach(function(h2) {
+      var card = document.createElement('section');
+      card.className = 'playbook-section-card';
+      h2.parentNode.insertBefore(card, h2);
+      card.appendChild(h2);
+      var cursor = card.nextSibling;
+      while (cursor && !(cursor.nodeType === 1 && cursor.tagName === 'H2')) {
+        var next = cursor.nextSibling;
+        card.appendChild(cursor);
+        cursor = next;
+      }
+    });
+  }
+
+  // ── 现金流与资产余额时序(含投资收益) ──
+  var wrScriptEl = document.getElementById('cashflow-with-return-data');
+  if (wrScriptEl) {
+    var wrData;
+    try { wrData = JSON.parse(wrScriptEl.textContent); } catch(e) { wrData = null; }
+    if (wrData && wrData.labels && wrData.labels.length > 0) {
+      var wrCtx = document.getElementById('cashflowWithReturnChart');
+      if (wrCtx) {
+        var wrAll = wrData.inflow.concat(wrData.outflow).concat(wrData.p10).concat(wrData.p25).concat(wrData.p50).concat(wrData.p75).concat(wrData.p90).concat(wrData.balance);
+        var wrMin = Math.min.apply(null, wrAll);
+        var wrMax = Math.max.apply(null, wrAll);
+
+        new Chart(wrCtx, {
+          type: 'bar',
+          data: {
+            labels: wrData.labels,
+            datasets: [
+              {
+                label: '偏保守结果下沿',
+                type: 'line',
+                data: wrData.p10,
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: false,
+                order: 4,
+              },
+              {
+                label: '偏乐观结果上沿',
+                type: 'line',
+                data: wrData.p90,
+                backgroundColor: 'rgba(34, 197, 94, 0.06)',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: '-1',
+                order: 4,
+              },
+              {
+                label: '常见结果下沿',
+                type: 'line',
+                data: wrData.p25,
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: false,
+                order: 4,
+              },
+              {
+                label: '常见结果上沿',
+                type: 'line',
+                data: wrData.p75,
+                backgroundColor: 'rgba(34, 197, 94, 0.12)',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: '-1',
+                order: 4,
+              },
+              {
+                label: '居中结果',
+                type: 'line',
+                data: wrData.p50,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHitRadius: 5,
+                fill: false,
+                tension: 0.1,
+                order: 2,
+              },
+              {
+                label: '无投资收益余额',
+                type: 'line',
+                data: wrData.balance,
+                borderColor: 'rgb(156, 163, 175)',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                borderDash: [5, 4],
+                pointRadius: 0,
+                pointHitRadius: 5,
+                fill: false,
+                tension: 0.1,
+                order: 2,
+              },
+              {
+                label: '现金流入',
+                data: wrData.inflow,
+                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                borderColor: 'rgb(34, 197, 94)',
+                borderWidth: 1,
+                borderRadius: 2,
+                order: 1,
+              },
+              {
+                label: '现金流出',
+                data: wrData.outflow,
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: 'rgb(239, 68, 68)',
+                borderWidth: 1,
+                borderRadius: 2,
+                order: 1,
+              },
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            scales: {
+              x: { ticks: { maxTicksLimit: 20, maxRotation: 45 } },
+              y: {
+                title: { display: true, text: '金额 (元)' },
+                min: wrMin,
+                max: wrMax,
+                ticks: { callback: function(v) { return '¥' + (v / 10000).toFixed(0) + '万'; } }
+              },
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    var val = Math.abs(ctx.parsed.y);
+                    return ctx.dataset.label + ': ¥' + val.toLocaleString();
+                  }
+                }
+              },
+              legend: { position: 'top' },
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // ── 情景推演(至100岁) ──
+  var pScriptEl = document.getElementById('pure-scenario-data');
+  if (pScriptEl) {
+    var pData;
+    try { pData = JSON.parse(pScriptEl.textContent); } catch(e) { pData = null; }
+    if (pData && pData.labels && pData.labels.length > 0) {
+      var pCtx = document.getElementById('pureScenarioChart');
+      if (pCtx) {
+        var pAll = pData.p10.concat(pData.p25).concat(pData.p50).concat(pData.p75).concat(pData.p90);
+        var pMin = Math.min.apply(null, pAll);
+        var pMax = Math.max.apply(null, pAll);
+
+        new Chart(pCtx, {
+          type: 'line',
+          data: {
+            labels: pData.labels,
+            datasets: [
+              {
+                label: '偏保守结果下沿',
+                data: pData.p10,
+                borderColor: 'rgba(239, 68, 68, 0.25)',
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: false,
+                order: 2,
+              },
+              {
+                label: '偏乐观结果上沿',
+                data: pData.p90,
+                borderColor: 'rgba(59, 130, 246, 0.25)',
+                backgroundColor: 'rgba(59, 130, 246, 0.06)',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: '-1',
+                order: 2,
+              },
+              {
+                label: '常见结果下沿',
+                data: pData.p25,
+                borderColor: 'rgba(239, 68, 68, 0.35)',
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: false,
+                order: 2,
+              },
+              {
+                label: '常见结果上沿',
+                data: pData.p75,
+                borderColor: 'rgba(59, 130, 246, 0.35)',
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                borderWidth: 0,
+                pointRadius: 0,
+                fill: '-1',
+                order: 2,
+              },
+              {
+                label: '居中结果',
+                data: pData.p50,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHitRadius: 5,
+                fill: false,
+                tension: 0.1,
+                order: 1,
+              },
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            scales: {
+              x: { ticks: { maxTicksLimit: 20, maxRotation: 45 } },
+              y: {
+                title: { display: true, text: '金融资产余额 (元)' },
+                min: pMin,
+                max: pMax,
+                ticks: { callback: function(v) { return '¥' + (v / 10000).toFixed(0) + '万'; } }
+              },
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ctx.dataset.label + ': ¥' + ctx.parsed.y.toLocaleString();
+                  }
+                }
+              },
+              legend: { position: 'top' },
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // ── Bucket 区间图 ──
+  // 每个 bucket 一张, 数据放在 <script id="bucket-fan-data-{slug}"> 里
+  // 包含: stacked bar (starting+cash+returns) + result band + center line
+  document.querySelectorAll('script[id^="bucket-fan-data-"]').forEach(function(scriptEl) {
+    var slug = scriptEl.id.replace('bucket-fan-data-', '');
+    var canvasEl = document.getElementById('bucketFanChart_' + slug);
+    if (!canvasEl) return;
+    var bd;
+    try { bd = JSON.parse(scriptEl.textContent); } catch(e) { return; }
+    if (!bd || !bd.labels || bd.labels.length === 0) return;
+
+    // y 轴范围: 包含结果区间 + bar 总和
+    var allVals = bd.p10.concat(bd.p25).concat(bd.p50).concat(bd.p75).concat(bd.p90);
+    if (bd.target_amount != null) allVals.push(bd.target_amount);
+    if (bd.ci_existing_cov != null) allVals.push(bd.ci_existing_cov);
+    // 加上 bar 顶 (已有保额 + starting + cash + returns)
+    var ciExisting = bd.ci_existing_cov || 0;
+    for (var i = 0; i < bd.starting.length; i++) {
+      var barTop = ciExisting + bd.starting[i] + Math.max(0, bd.cash[i]) + Math.max(0, bd.returns[i]);
+      allVals.push(barTop);
+    }
+    var bMin = Math.min.apply(null, allVals);
+    var bMax = Math.max.apply(null, allVals);
+    var bRange = bMax - bMin;
+    if (bRange > 0) {
+      bMin = 0;  // 纵轴从 0 起
+      bMax = bMax + bRange * 0.05;
+    } else {
+      // 所有值相同 (如应急储备每月再平衡到 target), 给定最小范围让线可见
+      var singleVal = bMin;
+      var padAmount = Math.max(Math.abs(singleVal) * 0.02, 100);
+      bMin = singleVal - padAmount;
+      bMax = singleVal + padAmount;
+    }
+
+    // bar 数据: 让 returns 永远 ≥ 0 (视觉上代表"贡献";负数用透明处理)
+    // 用条件颜色区分: 正收益绿色, 负收益红色
+    var barPosReturns = bd.returns.map(function(r) { return Math.max(0, r); });
+    var barNegReturns = bd.returns.map(function(r) { return Math.min(0, r); });
+    // cash 类似
+    var barPosCash = bd.cash.map(function(c) { return Math.max(0, c); });
+    var barNegCash = bd.cash.map(function(c) { return Math.min(0, c); });
+
+    var datasets = [
+      // ── 资金来源 stacked bar (在 y 轴上从下到上) ──
+      {
+        label: '滚存 (来自上年)',
+        type: 'bar',
+        data: bd.starting,
+        backgroundColor: 'rgba(59, 130, 246, 0.55)',
+        borderColor: 'rgba(59, 130, 246, 0.85)',
+        borderWidth: 0.5,
+        stack: 'breakdown',
+        order: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9,
+      },
+      {
+        label: '今年投入',
+        type: 'bar',
+        data: barPosCash,
+        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+        borderColor: 'rgba(34, 197, 94, 0.9)',
+        borderWidth: 0.5,
+        stack: 'breakdown',
+        order: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9,
+      },
+      {
+        label: '今年收益(正)',
+        type: 'bar',
+        data: barPosReturns,
+        backgroundColor: 'rgba(234, 179, 8, 0.7)',
+        borderColor: 'rgba(234, 179, 8, 0.9)',
+        borderWidth: 0.5,
+        stack: 'breakdown',
+        order: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9,
+      },
+      {
+        label: '提取金额',
+        type: 'bar',
+        data: bd.withdrawal_amount,
+        backgroundColor: 'rgba(148, 163, 184, 0.7)',
+        borderColor: 'rgba(148, 163, 184, 0.9)',
+        borderWidth: 0.5,
+        stack: 'breakdown',
+        order: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9,
+      },
+      {
+        label: '今年收益(负)',
+        type: 'bar',
+        data: barNegReturns,
+        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+        borderColor: 'rgba(239, 68, 68, 0.9)',
+        borderWidth: 0.5,
+        stack: 'breakdown',
+        order: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9,
+      },
+      {
+        label: '今年投入(负)',
+        type: 'bar',
+        data: barNegCash,
+        backgroundColor: 'rgba(156, 163, 175, 0.6)',
+        borderColor: 'rgba(156, 163, 175, 0.85)',
+        borderWidth: 0.5,
+        stack: 'breakdown',
+        order: 2,
+        barPercentage: 0.85,
+        categoryPercentage: 0.9,
+      },
+      // ── 结果区间带 (order > bars=2) ──
+      {
+        label: '偏乐观结果上沿',
+        type: 'line',
+        data: bd.p90,
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        pointRadius: 0,
+        fill: false,
+        order: 3,
+      },
+      {
+        label: '偏保守到偏乐观结果范围',
+        type: 'line',
+        data: bd.p10,
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(239, 68, 68, 0.3)',
+        borderWidth: 0,
+        pointRadius: 0,
+        fill: '-1',
+        order: 4,
+      },
+      {
+        label: '常见结果上沿',
+        type: 'line',
+        data: bd.p75,
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        pointRadius: 0,
+        fill: false,
+        order: 5,
+      },
+      {
+        label: '常见结果范围',
+        type: 'line',
+        data: bd.p25,
+        borderColor: 'transparent',
+        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+        borderWidth: 0,
+        pointRadius: 0,
+        fill: '-1',
+        order: 6,
+      },
+      // ── 居中结果线 (最上层线) ──
+      {
+        label: '居中结果',
+        type: 'line',
+        data: bd.p50,
+        borderColor: 'rgb(15, 23, 42)',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHitRadius: 5,
+        fill: false,
+        tension: 0.1,
+        order: 7,
+      },
+    ];
+
+    // 目标水平线
+    if (bd.target_amount != null && bd.target_amount > 0) {
+      datasets.push({
+        label: '目标',
+        type: 'line',
+        data: bd.labels.map(function() { return bd.target_amount; }),
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderDash: [4, 3],
+        pointRadius: 0,
+        fill: false,
+        order: 8,
+      });
+    }
+
+    // 提取年垂直线
+    if (bd.withdrawal_year != null && bd.labels.indexOf(bd.withdrawal_year) >= 0) {
+      var wyIdx = bd.labels.indexOf(bd.withdrawal_year);
+      if (wyIdx > 0 && wyIdx < bd.labels.length) {
+        datasets.push({
+          label: '提取年',
+          type: 'line',
+          data: bd.labels.map(function(_, i) { return i === wyIdx ? bMax : null; }),
+          borderColor: 'rgba(239, 68, 68, 0.6)',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderDash: [2, 2],
+          pointRadius: 0,
+          showLine: false,
+          fill: false,
+          order: 8,
+        });
+      }
+    }
+
+    new Chart(canvasEl, {
+      type: 'bar',  // 混合图: 默认 bar, 个别 dataset 用 line
+      data: { labels: bd.labels, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        scales: {
+          x: {
+            stacked: true,
+            ticks: { maxTicksLimit: 10, maxRotation: 0, autoSkip: true },
+          },
+          y: {
+            min: bMin,
+            max: bMax,
+            ticks: {
+              callback: function(v) {
+                if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万';
+                return '¥' + v.toFixed(0);
+              }
+            }
+          },
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                if (ctx.parsed.y == null) return null;
+                if (Math.abs(ctx.parsed.y) < 0.5) return null;
+                return ctx.dataset.label + ': ¥' + ctx.parsed.y.toLocaleString();
+              }
+            }
+          },
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              filter: function(item, chart_data) {
+                // 只显示有意义的项
+                var keep = ['滚存 (来自上年)', '今年投入', '今年收益(正)', '提取金额', '今年收益(负)', '居中结果', '目标', '提取年'];
+                if (keep.indexOf(item.text) >= 0) return true;
+                return false;
+              },
+              boxWidth: 12,
+              font: { size: 10 },
+            }
+          },
+        },
+      }
+    });
+  });
+
+  // ── D4. 各层余额堆叠图 ──
+  var d4ScriptEl = document.getElementById('combined-stacked-data');
+  if (d4ScriptEl) {
+    var d4;
+    try { d4 = JSON.parse(d4ScriptEl.textContent); } catch(e) { /* skip */ }
+    if (d4 && d4.labels && d4.labels.length > 0) {
+      var canvasEl = document.getElementById('combinedStackedChart');
+      if (canvasEl) {
+        var allVals = d4.total_p10.concat(d4.total_p25).concat(d4.total_p50).concat(d4.total_p75).concat(d4.total_p90);
+        var bMin = Math.min.apply(null, allVals);
+        var bMax = Math.max.apply(null, allVals);
+        var bRange = bMax - bMin;
+        if (bRange > 0) { bMin = 0; bMax = bMax + bRange * 0.05; }
+        else { bMin = 0; bMax = 1000; }
+
+        var bnames = Object.keys(d4.series);
+        var colors = [
+          'rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)',
+          'rgba(245, 158, 11, 0.7)', 'rgba(139, 92, 246, 0.7)',
+          'rgba(236, 72, 153, 0.7)', 'rgba(249, 115, 22, 0.7)',
+          'rgba(14, 165, 233, 0.7)', 'rgba(168, 85, 247, 0.7)',
+          'rgba(34, 197, 94, 0.7)',  'rgba(239, 68, 68, 0.7)',
+          'rgba(20, 184, 166, 0.7)', 'rgba(132, 204, 22, 0.7)',
+        ];
+        var borderColors = colors.map(function(c) { return c.replace('0.7', '0.9'); });
+
+        var datasets = [];
+
+        // stacked bar: 每层一个 dataset
+        bnames.forEach(function(name, i) {
+          datasets.push({
+            label: name,
+            type: 'bar',
+            data: d4.series[name],
+            backgroundColor: colors[i % colors.length],
+            borderColor: borderColors[i % borderColors.length],
+            borderWidth: 0.5,
+            stack: 'stacked',
+            order: 2,
+            barPercentage: 0.9,
+            categoryPercentage: 1.0,
+          });
+        });
+
+        // 结果区间带: 偏保守到偏乐观 / 常见结果范围
+        datasets.push({ label: '偏乐观结果上沿', type: 'line', data: d4.total_p90, borderColor: 'transparent', backgroundColor: 'transparent', borderWidth: 0, pointRadius: 0, fill: false, order: 4 });
+        datasets.push({ label: '偏保守到偏乐观结果范围', type: 'line', data: d4.total_p10, borderColor: 'transparent', backgroundColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 0, pointRadius: 0, fill: '-1', order: 4 });
+        datasets.push({ label: '常见结果上沿', type: 'line', data: d4.total_p75, borderColor: 'transparent', backgroundColor: 'transparent', borderWidth: 0, pointRadius: 0, fill: false, order: 3 });
+        datasets.push({ label: '常见结果范围', type: 'line', data: d4.total_p25, borderColor: 'transparent', backgroundColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 0, pointRadius: 0, fill: '-1', order: 3 });
+
+        // 居中结果线 (最上层)
+        datasets.push({
+          label: '居中结果总和',
+          type: 'line',
+          data: d4.total_p50,
+          borderColor: 'rgb(15, 23, 42)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHitRadius: 5,
+          fill: false,
+          tension: 0.1,
+          order: 5,
+        });
+
+        new Chart(canvasEl, {
+          type: 'bar',
+          data: { labels: d4.labels, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            scales: {
+              x: { stacked: true, ticks: { maxTicksLimit: 15, maxRotation: 0, autoSkip: true } },
+              y: {
+                min: bMin,
+                max: bMax,
+                ticks: { callback: function(v) { if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万'; return '¥' + v.toFixed(0); } }
+              },
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: { boxWidth: 12, font: { size: 10 } }
+              }
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // ── C3. 心理账户年度资金计划图 (stacked area) ──
+  var acEl = document.getElementById('annual-cashflow-data');
+  if (acEl) {
+    var ac;
+    try { ac = JSON.parse(acEl.textContent); } catch(e) { /* skip */ }
+    if (ac && ac.labels && ac.labels.length > 0) {
+      var canvasEl = document.getElementById('annualCashflowChart');
+      if (canvasEl) {
+        var bnames = Object.keys(ac.series);
+        var areaColors = [
+          'rgba(59, 130, 246, 0.5)', 'rgba(16, 185, 129, 0.5)',
+          'rgba(245, 158, 11, 0.5)', 'rgba(139, 92, 246, 0.5)',
+          'rgba(236, 72, 153, 0.5)', 'rgba(249, 115, 22, 0.5)',
+          'rgba(14, 165, 233, 0.5)', 'rgba(168, 85, 247, 0.5)',
+          'rgba(34, 197, 94, 0.5)',  'rgba(239, 68, 68, 0.5)',
+          'rgba(20, 184, 166, 0.5)', 'rgba(132, 204, 22, 0.5)',
+        ];
+        var lineColors = areaColors.map(function(c) { return c.replace('0.5', '0.85'); });
+
+        // 只显示正值,负值 clip 到 0 (应急再平衡噪点不影响分配计划)
+        var posSeries = {};
+        bnames.forEach(function(name) {
+          posSeries[name] = ac.series[name].map(function(v) { return Math.max(0, v); });
+        });
+
+        var datasets = [];
+        bnames.forEach(function(name, i) {
+          datasets.push({
+            label: name,
+            type: 'line',
+            data: posSeries[name],
+            backgroundColor: areaColors[i % areaColors.length],
+            borderColor: lineColors[i % lineColors.length],
+            borderWidth: 1,
+            pointRadius: 0,
+            pointHitRadius: 5,
+            fill: i === 0 ? 'origin' : '-1',
+            tension: 0.1,
+            order: 5,
+          });
+        });
+
+        // y 轴范围
+        var bottom = posSeries[bnames[0]].map(function() { return 0; });
+        var top = posSeries[bnames[0]].slice();
+        for (var bi = 1; bi < bnames.length; bi++) {
+          for (var yi = 0; yi < top.length; yi++) {
+            top[yi] += posSeries[bnames[bi]][yi];
+          }
+        }
+        var bMax = Math.max.apply(null, top);
+        bMax = bMax * 1.05 || 1000;
+
+        new Chart(canvasEl, {
+          type: 'line',
+          data: { labels: ac.labels, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            elements: { point: { radius: 0 } },
+            scales: {
+              x: { ticks: { maxTicksLimit: 15, maxRotation: 0, autoSkip: true } },
+              y: {
+                stacked: true,
+                min: 0,
+                max: bMax,
+                ticks: { callback: function(v) { if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万'; return '¥' + v.toFixed(0); } }
+              },
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: 'bottom',
+                labels: { boxWidth: 12, font: { size: 10 } }
+              }
+            }
+          }
+        });
+      }
+    }
+  }
+
+});
+</script>
+{% endblock %}

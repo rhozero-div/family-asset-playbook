@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}FAPM{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
+  <link rel="stylesheet" href="/static/progress.css?v={{ asset_version }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <h1><a href="/">FAPM 家庭资产配置剧本方法论</a></h1>
+    <nav>
+      <a href="/questionnaire">生成剧本</a>
+      <a href="/">客户列表</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>本方法论不构成投资建议。</strong>所有数值均为占位默认值,实际配置需结合客户具体情况与专业人士意见。</p>
+  </footer>
+</body>
+</html>
