@@ -6,3 +6,4 @@ markdown>=3.5
 numpy>=1.24
 scipy>=1.7.0
 pyyaml>=6.0
+qmc-tool @ https://github.com/rhozero-div/Quasi-Monte-Carlo-Generator/archive/refs/heads/main.tar.gz
