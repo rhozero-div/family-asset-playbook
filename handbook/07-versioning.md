@@ -1,234 +1,130 @@
-# 版本管理(Versioning)
+# Versioning
 
-**版本:** 0.1.0
-**状态:** draft
-
----
-
-## 1. 概述
-
-本章定义方法论手册(及配套应用、剧本)的**版本管理约定**。
-
-版本管理是**方法论可演进性**的保障:它让"方法论变了一个字段"与"方法论范式变了"能清晰区分,让旧的客户档案、旧的剧本能正确判断兼容性。
+**Version:** 0.1.0  
+**Status:** draft
 
 ---
 
-## 2. SemVer 语义
+## 1. Overview
 
-本项目采用 [Semantic Versioning 2.0.0](https://semver.org/) 约定:
+This chapter defines versioning conventions for:
 
-```
+- the methodology handbook
+- the application behavior
+- the generated playbook contract
+
+Versioning matters because the methodology will evolve.
+The system needs a way to distinguish:
+
+- wording tweaks
+- compatible feature additions
+- real contract changes
+
+## 2. Versioning Style
+
+This project follows a SemVer-style pattern:
+
+```text
 MAJOR.MINOR.PATCH
-  │     │     │
-  │     │     └── 修订号:措辞修正、示例更新、默认值微调
-  │     └──────── 次版本号:补充新规则、新事件类型、新资产大类、向后兼容
-  └────────────── 主版本号:方法论大改、范式变更、破坏性变更
 ```
 
-### 2.1 主版本号(MAJOR)递增的触发条件
+Interpretation:
 
-- 方法论**范式**变更(如:Pareto 前沿 → 新的求解范式)
-- 资产大类**类别**变更(固收/权益/保险/另类 → 新分类)
-- 事件类型**根本性**调整(如:从 5 类 → 新分类)
-- **删除**现有规则(对依赖该规则的应用/剧本是破坏性变更)
-- 现有规则的**含义反转**(原意为 X,新意为 ¬X)
-- 输出结构的**根本性**调整(剧本从 5 段 → 不同结构)
+- `MAJOR`
+  - incompatible methodology or schema change
+- `MINOR`
+  - new compatible rule, section, or feature
+- `PATCH`
+  - wording fixes, documentation cleanup, narrow default tuning, or bug-level clarification
 
-### 2.2 次版本号(MINOR)递增的触发条件
+## 3. What Can Trigger Each Level
 
-- 新增**资产大类**或事件类型(向后兼容)
-- 新增**可选规则**(默认关闭,顾问可启用)
-- 新增**不适用场景**或专业介入决策点
-- 新增**禁止表述**
-- 输出结构的**扩展字段**(旧字段仍存在)
-- 计算引擎新增**可选 API**(旧 API 仍存在)
+### 3.1 PATCH
 
-### 2.3 修订号(PATCH)递增的触发条件
+Use `PATCH` for changes such as:
 
-- 措辞修正、错别字修正
-- 示例更新
-- 默认值**微调**(不影响语义,如 4.5% → 4.4%)
-- 文档链接修复
-- 文档格式微调
+- wording clarification
+- documentation cleanup
+- non-structural rendering fixes
+- small assumption-default adjustment
 
----
+### 3.2 MINOR
 
-## 3. 手册层与应用层的版本关系
+Use `MINOR` for changes such as:
 
-方法论手册层和应用层**独立**递增版本号,通过**绑定关系**关联。
+- adding a new compatible event type
+- adding a new optional input field
+- adding a new explanatory section
+- extending output structure without breaking current consumers
 
-### 3.1 手册层版本
+### 3.3 MAJOR
 
-- 反映**方法论规则**的版本
-- 改动即递增(主/次/修订,按 §2 规则)
-- 通过 `**版本:**` 字段标注在每个章节顶部
-- 通过 CHANGELOG 记录每个版本的变化
+Use `MAJOR` for changes such as:
 
-### 3.2 应用层版本
+- incompatible schema changes
+- removal or redefinition of core sections
+- methodology logic that invalidates earlier profile interpretation
 
-- 反映**软件实现**的版本
-- 与手册层版本**不绑定**(可独立演进)
-- 应用层**声明所支持的手册层版本范围**(向下兼容)
+## 4. Schema Version and Methodology Version
 
-### 3.3 绑定关系示例
+In practice, a generated profile or playbook may carry methodology-related version references.
+The purpose is to make it possible to answer:
 
-```
-应用层 v2.3.0
-├─ 支持手册层 v0.1.x(完全支持)
-├─ 支持手册层 v0.2.x(部分支持,新增字段忽略)
-└─ 不支持手册层 v0.3.x(主版本变更)
-```
+- which methodology contract was this built under?
+- is this profile still compatible with current behavior?
 
-应用层在配置文件中声明这一关系,客户档案通过 `schema_version` 字段标注所使用的手册层版本。
+## 5. Runtime Reality
 
----
+The current repo may contain:
 
-## 4. 客户档案的版本兼容性
+- handbook version references
+- schema version references
+- asset-version references for frontend assets
 
-### 4.1 客户档案版本字段
+These should not be conflated.
+They solve different problems:
 
-每份客户档案(YAML)包含两个版本字段:
+- methodology contract
+- data compatibility
+- static asset cache invalidation
 
-```yaml
-profile_version: "0.1"           # 档案格式版本(可独立于手册)
-schema_version: "handbook-v0.1"  # 所使用的方法论手册版本
-```
+## 6. When To Recalculate Old Playbooks
 
-### 4.2 兼容性矩阵
+Old playbooks should be reconsidered when:
 
-| 客户档案 schema_version | 应用层支持? | 剧本生成器行为 |
-|---|---|---|
-| 相同 | ✅ 完全支持 | 正常生成 |
-| 应用层支持的次版本 | ⚠️ 部分支持 | 生成剧本,但提示"使用了旧版方法论" |
-| 应用层不支持的主版本 | ❌ 拒绝 | 提示"档案需升级或迁移" |
+- a major methodology change occurs
+- a meaningful minor rule changes interpretation materially
+- the client profile facts themselves have changed
 
-### 4.3 档案迁移
+Not every patch-level wording change requires regeneration.
 
-当手册层主版本变更时,旧档案可能需要迁移。迁移工具(后续阶段)在 `tools/` 下提供,执行字段重命名、默认值更新、约束转换等。
+## 7. Documentation Responsibility
 
----
+Whenever current code behavior changes materially, the matching handbook chapter should be updated so that:
 
-## 5. 剧本的版本管理
+- current output
+- current documentation
+- current tests
 
-### 5.1 剧本版本字段
+stay aligned.
 
-每份剧本包含:
+## 8. Backward Compatibility Principle
 
-```markdown
-**剧本版本:** 0.1
-**生成时间:** 2026-06-25T10:00:00Z
-**方法论版本:** handbook-v0.1
-```
+Backward compatibility is preferred where practical, especially for:
 
-### 5.2 剧本版本号的递增
+- optional fields
+- explanatory wording changes
+- additive output sections
 
-- 初次生成 → 0.1
-- 任何字段变更(数值、事件、骨架、迁移规则)→ 次版本号递增
-- 任何**结构性**变更(阶段重排、骨架重定义)→ 主版本号递增
-- 措辞修正、错别字 → 修订号递增
+But compatibility should not be preserved at the cost of making the current methodology unclear.
 
-### 5.3 旧剧本的处理
+## 9. Source of Truth Rule
 
-- 旧剧本**不删除**,归档在客户档案下,作为历史快照
-- 客户档案保留**当前剧本 + 历史剧本**,便于回溯决策
-- 旧剧本的元数据**不可修改**(以保证历史真实性)
+When version references conflict, use this order:
 
----
+1. current code behavior
+2. current tests
+3. current questionnaire output
+4. current handbook
 
-## 6. 边界变更的版本规则
-
-边界声明(`06-boundaries.md`)的变更尤其敏感,因为它涉及**方法的适用范围**。
-
-| 变更类型 | 版本号 | 说明 |
-|---|---|---|
-| 新增不适用场景 | 次版本号 | 收紧边界,向后兼容 |
-| 新增专业介入决策点 | 次版本号 | 收紧边界,向后兼容 |
-| 新增禁止表述 | 修订号 | 措辞层变化 |
-| **移除**现有不适用场景 | 主版本号 | 放宽边界,可能影响既有剧本 |
-| **移除**现有禁止表述 | 主版本号 | 放宽表达,可能改变剧本外观 |
-| 边界阈值调整(如 1 亿 → 5000 万) | 视情况 | 收紧→次版本;放宽→主版本 |
-
-详见 [`06-boundaries.md`](06-boundaries.md)。
-
----
-
-## 7. 版本号的标注位置
-
-### 7.1 手册层章节
-
-每个 Markdown 章节的顶部标注格式如下(章节标题占位符 `{name}` 替换为实际章节名,`# ` 前缀由 Markdown 渲染):
-
-```
-Markdown 章节模板(伪代码,展示结构):
-
-  H1 标题行 = "# " + {name}
-  元数据行 1 = "**版本:** " + {semver}
-  元数据行 2 = "**状态:** " + {status}
-
-实际示例(以 07-versioning.md 自身为例):
-  H1 标题行 = "# 版本管理(Versioning)"
-  元数据行 1 = "**版本:** 0.1.0"
-  元数据行 2 = "**状态:** draft"
-```
-
-> 注:本节示例使用伪代码格式而非 Markdown 代码块,以避免示例本身被工具误识别为 H1。
-
-章节版本号 = 该章节最近一次变更时的手册层版本号。
-
-### 7.2 仓库根目录
-
-- `README.md`:不单独标注
-
-### 7.3 客户档案
-
-见 §4.1。
-
-### 7.4 剧本
-
-见 §5.1。
-
----
-
-## 8. 版本号与发布日期
-
-- 版本号**不**隐含发布日期
-- 发布日期通过 **git tag** 或 **GitHub Releases** 记录
-
----
-
-## 9. deprecation 流程
-
-当某个字段、规则、API 即将被移除时,采用 deprecation 流程:
-
-### 9.1 deprecation 标记
-
-在文档/代码中标记:
-
-```markdown
-> ⚠️ **DEPRECATED since v0.3.0:** 字段 `old_field` 已弃用,将在 v1.0.0 移除。请使用 `new_field` 替代。
-```
-
-### 9.2 deprecation 周期
-
-- 弃用标记 → 实际移除 **至少跨 2 个次版本**
-- 例如:在 v0.3.0 标记弃用 → v0.5.0 后才能在 v1.0.0 移除
-- 这给应用层和用户足够时间迁移
-
-### 9.3 双轨期
-
-弃用后到移除前的版本,**新旧字段/规则并存**:
-- 新字段是**首选**
-- 旧字段**仍然可用**,但应用层应打印 deprecation warning
-- 客户档案迁移工具应主动将旧字段转为新字段
-
----
-
-## 10. 与其他章节的关联
-
-| 本章内容 | 影响 |
-|---|---|
-| SemVer 语义 | 手册层、应用层、客户档案、剧本的版本号约定 |
-| 手册层与应用层的关系 | 双层架构的演进协调(详见 [`00-methodology-overview.md`](00-methodology-overview.md)) |
-| 客户档案兼容性 | 输入端 [`01-input-schema.md`](01-input-schema.md) 的版本字段 |
-| 剧本版本管理 | 输出端 [`05-output-structure.md`](05-output-structure.md) 的元数据 |
-| 边界变更规则 | [`06-boundaries.md`](06-boundaries.md) 的演进管理 |
+Then update whichever versioned document has drifted.

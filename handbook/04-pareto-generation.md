@@ -1,306 +1,176 @@
-# Pareto 生成规则(Pareto Generation Rules)
+# Pareto Generation Rules
 
-**版本:** 0.1.0
-**状态:** draft
-
----
-
-## 1. 概述
-
-本章是方法论的**核心规则章节**。它定义:
-- 如何从客户约束得到 3 个代表性骨架(保守 / 平衡 / 进取)
-- 跨期衔接规则(每期的产出如何平滑连接到下一期)
-- 不确定性传递(随事件临近,区间宽度如何收窄)
-- 与 MPT 等求解器的边界
-
-> 本章是**规则文本**,不包含代码。计算引擎(阶段 2)将把这些规则翻译为可执行代码。
+**Version:** 0.1.0  
+**Status:** draft
 
 ---
 
-## 2. 输入与输出
-
-### 2.1 输入
-
-Pareto 生成接收以下输入(对**每个规划期 Pi**):
-
-| 输入 | 来源 | 说明 |
-|---|---|---|
-| 客户档案(YAML) | 输入端 | [`01-input-schema.md`](01-input-schema.md) |
-| 资产大类假设 | 手册层 | [`03-asset-assumptions.md`](03-asset-assumptions.md) |
-| 规划期定义 | 事件驱动 | [`02-life-events.md` §4](02-life-events.md) |
-| 顾问风险偏好评估 | 客户档案 | `advisor_assessment.risk_tolerance` |
-
-### 2.2 输出
-
-对每个规划期 Pi,生成**3 个骨架点** + **每个点的迁移规则**:
-
-```
-ParetoOutput:
-  period: Pi
-  skeletons:
-    - name: "保守型"
-      weights: { 固收: x1, 权益: x2, 保险: x3, 另类: x4 }
-      expected_return_range: [...]
-      max_drawdown_range: [...]
-      role: "流动性优先,牺牲长期增长"
-      migration_rules:
-        - if "event_near": 转向平衡型
-        - if "income_drop": 加重固收
-    - name: "平衡型"
-      ...
-    - name: "进取型"
-      ...
-```
-
-**注意:**
-- `weights` 是**区间**(例如 固收 30-45%),不是点估计
-- `expected_return_range` 是**年化收益区间**
-- `max_drawdown_range` 是**最大回撤容忍区间**
+## 1. Overview
 
----
+This chapter defines the rule layer that turns household constraints into representative planning structures.
 
-## 3. 三步生成流程
+It covers:
 
-### 3.1 Step 1:约束建模
+- how the methodology moves from profile constraints to stage-based allocation logic
+- how different planning styles relate to each other
+- how uncertainty narrows as events approach
+- the boundary between this methodology and traditional optimization solvers
 
-将客户档案转换为**约束三元组**:
+This is a methodology chapter, not a code chapter.
 
-```
-Constraints:
-  rigid_demand:    # 刚性需求(必须支出)
-    - amount: ...
-      timing_year: ...
-      certainty: high
-  liquidity_need:  # 流动性需求(应急储备)
-    months: 6   # 流动性可支撑月数
-  risk_preference: # 风险偏好(顾问与客户共同标定)
-    level: balanced  # conservative / balanced / aggressive
-```
+## 2. Input and Output
 
-**约束建模规则:**
-- `rigid_demand` 直接来自 `events` 中 `certainty=high` 的事件
-- `liquidity_need` 默认取 `assets.liquidity_reserve_months`,可在该基础上由顾问调整
-- `risk_preference` 默认取 `advisor_assessment.risk_tolerance`,顾问可覆盖
-- 若 `assets.liquidity_reserve_months` 缺失,当前引擎回退为 `6` 个月
+### 2.1 Inputs
 
-### 3.2 Step 2:三骨架生成
+The rule layer reads from:
 
-对每个 Pi,以**约束三元组**为输入,通过**基于规则的骨架生成**(非 MPT 求解)产出 3 个骨架:
+- the client profile
+- life-event timing
+- asset assumptions
+- advisor risk preference
+- stage-weight overrides if provided
 
-**保守型(Conservative):**
+### 2.2 Outputs
 
-- 固收权重:[50%, 60%]
-- 权益权重:[10%, 20%]
-- 保险权重:[15%, 20%]
-- 另类权重:[5%, 10%]
-- 角色:**流动性优先、刚性需求匹配、牺牲长期增长**
-- 适用:刚性需求临近、不愿承受回撤、客户年龄偏大
+Conceptually, the methodology produces representative planning skeletons rather than one mathematically “perfect” allocation.
 
-**平衡型(Balanced):**
+In the current product form, that idea is reflected operationally through:
 
-- 固收权重:[30%, 45%]
-- 权益权重:[25%, 40%]
-- 保险权重:[10%, 20%]
-- 另类权重:[5%, 15%]
-- 角色:**风险调整后最优**
-- 适用:大多数家庭、长期视角
+- stage-based weights
+- event-driven bucket order
+- emergency-first logic
+- surplus-account logic
+- summary-level interpretation
 
-**进取型(Aggressive):**
+## 3. Why This Is Called “Pareto” in the Handbook
 
-- 固收权重:[15%, 25%]
-- 权益权重:[50%, 65%]
-- 保险权重:[5%, 10%]
-- 另类权重:[10%, 20%]
-- 角色:**长期增长优先、承受较大回撤**
-- 适用:刚性需求远、年轻、可承受波动
+Historically, this chapter described three representative planning skeletons:
 
-**说明:**
-- 上述区间是**默认模板**,可被顾问调整
-- 区间宽度反映**不确定性**;越接近刚性需求,区间越窄(详见 §6)
-- 三大类的合计权重必须 = 100%(±1% 容差)
-- 当前运行时若使用 `assumptions.phases[].weights` 覆盖默认模板,会优先读取该字段;输入既可写成 `0-1` 小数，也可写成 `0-100` 百分数，系统会统一按百分数解释
+- conservative
+- balanced
+- aggressive
 
-### 3.3 Step 3:迁移规则生成
+The important idea was never “solve for one point.”
+The important idea was “show a family a small set of interpretable structures that reflect different trade-offs.”
 
-每个骨架附带**迁移规则**,描述"如果 X 发生,如何向 Y 调整":
+The current product still follows that spirit, even though the actual runtime is now more concretely expressed through bucket rules and stage weights.
 
-| 触发条件 | 迁移方向 |
-|---|---|
-| 刚性需求临近(≤ 2 年) | 任何骨架 → 保守型 |
-| 收入下降 ≥ 30% | 进取型 / 平衡型 → 平衡型 |
-| 重大健康事件 | 平衡型 / 进取型 → 加重保险 |
-| 移民 / 海外工作 | 启用海外镜像,重新平衡 |
-| 客户风险偏好变化 | 整体偏向变化 |
+## 4. Current Practical Rule Chain
 
-迁移规则是**条件性的**,不自动触发;由客户与顾问**共同决策**后手动应用。
+The current engine effectively follows this order:
 
-### 3.4 当前执行引擎的年度净结余分配规则
+1. determine emergency reserve need
+2. order major events by timing
+3. create event buckets in time order
+4. send remaining long-horizon money to the surplus account
+5. apply stage-based return logic for range projection
 
-当前剧本生成引擎在 bucket 级推演时,对年度净结余采用以下固定顺序:
+This is the real current behavior and should be treated as the active contract.
 
-1. 先补足应急储备至目标月数
-2. 再按事件时间顺序,优先补最早到期的目标 bucket
-3. 同一年内,若某目标 bucket 仍有缺口,按“剩余缺口 ÷ 剩余年份”的节奏分配当年净结余
-4. 扣除前述用途后的剩余净结余,才进入“富余资金”
+## 5. Current Annual Net-Surplus Routing Rule
 
-这条规则属于当前实现口径,会直接影响剧本中的资金分层、P50 余额表和相关图表。
+The current bucket-level implementation routes annual net surplus in this fixed order:
 
-### 3.5 当前执行引擎的应急再平衡规则
+1. refill emergency reserve to target first
+2. fund the earliest unmet event bucket next
+3. continue in event-time order
+4. send only remaining funds to the surplus account
 
-当前 bucket 级推演还包含一条自动再平衡规则:
+This rule directly affects:
 
-1. 若应急储备高于目标值,超出部分在该年转出,参与后续目标资金分配
-2. 若应急储备低于目标值,且存在“富余资金”,则优先从“富余资金”拉回补足
+- the playbook’s funding-order narrative
+- bucket tables
+- bucket charts
+- the interpretation of milestone pressure
 
-这条规则的目的,是让应急层长期维持在既定流动性目标附近,避免其无限累积或被动流失。
+## 6. Current Emergency Rebalancing Rule
 
-### 3.6 当前执行引擎的富余资金默认口径
+The current bucket projection also includes an emergency rebalancing rule:
 
-当家庭在满足应急层和所有已识别目标后仍有剩余资金时,当前实现会创建“富余资金”层,默认口径为:
+- if the emergency reserve is above target, excess can flow outward into later funding needs
+- if the emergency reserve is below target and surplus money exists, surplus funds can be used to top it back up
 
-- 默认用途:无特定用途的长期增值资金池
-- 默认权重:固收 `17.5%` / 权益 `62.5%` / 保险 `5%` / 另类 `15%`
-- 若档案中存在退休事件,则默认以退休年份作为其阶段切换时点;退休前按长期增值看待,退休后转向更保守阶段
+The purpose is to keep emergency liquidity near its intended level rather than letting it drift indefinitely.
 
-这属于当前方法论的默认执行骨架;如未来要允许顾问覆盖,应在输入 schema 中单独开放配置位。
+## 7. Current Surplus-Account Rule
 
-### 3.7 当前缺口可行性分档阈值
+When the household still has capital after emergency and event needs are accounted for, the current methodology creates a **surplus account**.
 
-对出现资金缺口的节点,当前引擎会先计算“补足该缺口所需的年化收益率”,再按以下阈值判断其在当前方法论下的可行性:
+Its current role is:
 
-- `conservative`: 所需年化收益率 `<= 4.5%`
-- `balanced`: 所需年化收益率 `<= 8.0%`
-- `aggressive`: 所需年化收益率 `<= 12.0%`
-- `infeasible`: 所需年化收益率 `> 12.0%`
+- long-horizon flexible capital
+- separated from near-term milestone money
+- typically treated with longer-horizon stage logic
 
-这组阈值不是市场预测,而是**当前方法论用于客户沟通的风险分档上限**。若超过 `12%`,当前口径会把缺口归类为“单靠投资收益补足并不合理”,应优先考虑:
+If a retirement event exists, the surplus account can use retirement timing as a stage-switch reference in the current implementation.
 
-1. 降低该节点预算
-2. 推迟支出时点
-3. 增加收入或额外储备
+## 8. Current Feasibility Threshold Concept
 
-### 3.8 当前所需收益率(required return)的求解边界
+For milestone shortfalls, the engine may estimate a required annualized return to fill the gap.
+That estimate is then interpreted against broad feasibility bands, not sold as a target return.
 
-当前引擎在估算“补足缺口所需年化收益率”时,采用以下固定边界:
+The purpose is communication:
 
-- 用二分法在 `0% ~ 30%` 之间搜索可行收益率
-- 若 `0%` 已足够覆盖目标,则返回 `0%`
-- 若时间已不足(剩余年数 `<= 0`),则直接返回 `30%`
-- 若 `30%` 仍无法满足目标,则返回 `30%`,并在后续解释中视为不可行
+- “this gap is plausible within a conservative frame”
+- “this gap probably needs a more growth-heavy frame”
+- “this gap is not reasonable to solve through return assumptions alone”
 
-这是一条**求解器边界**,不是顾问建议客户追求 `30%` 收益率的意思。
+If the required return becomes too high, the intended client conversation should shift toward:
 
-### 3.9 当前所需收益率对负现金流的处理
+- reducing the target
+- delaying the target
+- increasing savings or income
 
-当前节点缺口测算里,如果要估算“靠投资收益补足缺口”所需的年化收益率,引擎会把未来逐年净现金流先转换成年度追加资金口径。
+not promising unrealistic investment performance.
 
-在这一步里:
+## 9. Required-Return Solver Boundary
 
-- 正值年度净现金流会进入平均年度追加资金
-- 负值年度净现金流会按 `0` 处理,不会作为“负追加”拉低求解结果
+The required-return estimate is a bounded communication tool, not a recommendation engine.
+It exists to signal pressure, not to suggest a client should pursue extreme returns.
 
-也就是说,当前实现把 required return 视为“在不额外惩罚未来负现金流的前提下,需要多高收益率才能补足缺口”。这会让 required return 更适合作为**沟通级压力信号**,而不是严格的精算值。
+## 10. Uncertainty Narrowing
 
-### 3.10 当前终老推演的输出粒度
+The methodology assumes that planning width should narrow as an event approaches.
 
-当前引擎内部的终老推演,使用以下固定口径:
+In plain language:
 
-- 起点:最后一个未来事件之后的剩余资产
-- 终点:主要收入者 `100` 岁
-- 粒度:按 `5` 年一步输出,而不是逐年明细
+- far-away goals can tolerate wider planning ranges
+- near-term goals should use tighter and more conservative ranges
 
-这意味着终老推演更偏向“长期可持续性轮廓”,不是逐年的精细现金流预算表。
+This logic is reflected today through stage weights and related helpers.
 
----
+## 11. Why This Methodology Is Not Classical MPT
 
-## 4. 跨期衔接规则
+This methodology does **not** aim to be a pure mean-variance optimizer.
+Its differences include:
 
-每个 Pi 的产出需与 Pi+1 的起点平滑衔接:
+- it centers family events, not abstract portfolio efficiency
+- it uses buckets and timing order
+- it prioritizes interpretability
+- it allows the client and advisor to discuss trade-offs in plain language
 
-### 4.1 衔接检查项
+The methodology can still use mathematical tools such as simulation and distribution summaries.
+But the household planning frame is rule-led, not optimizer-led.
 
-- **流动性断点检查**:Pi 末端的流动性储备 ≥ Pi+1 前 6 个月的刚性需求?
-- **回撤累计检查**:Pi 末端的累计回撤未超 Pi+1 的容忍上限?(默认上限由 `advisor_assessment.risk_tolerance` 映射:conservative→15%,balanced→25%,aggressive→40%)
-- **大类权重的合理过渡**:Pi 末端权重与 Pi+1 起点权重相差 ≤ 30%?(避免剧烈再平衡)
+## 12. When Advisor Intervention Is Required
 
-### 4.2 不衔接的处理
+Advisor intervention becomes more important when:
 
-- 若流动性断点 → 在 Pi 末期增加固收、减少权益
-- 若回撤累计超限 → 在 Pi 末期降低权益上限、增加保险
-- 若大类权重过渡超 30% → 在 Pi 末期分步过渡,标注"过渡期"标记
+- assumptions are materially overridden
+- event order changes significantly
+- a large shortfall appears
+- retirement structure changes materially
+- the household case starts to exceed normal family-planning scope
 
-### 4.3 跨期的剧本叙事
+## 13. Relationship to Other Chapters
 
-跨期衔接会影响**剧本叙事**:
-- 衔接顺畅 → 叙事流畅,无特殊说明
-- 衔接断裂 → 叙事中标注"过渡期",并提供"调整建议"
+- input contract: [`01-input-schema.md`](01-input-schema.md)
+- life-event rules: [`02-life-events.md`](02-life-events.md)
+- asset assumptions: [`03-asset-assumptions.md`](03-asset-assumptions.md)
+- output contract: [`05-output-structure.md`](05-output-structure.md)
+- boundaries: [`06-boundaries.md`](06-boundaries.md)
 
----
+## 14. Authority Rule
 
-## 5. 与 MPT 等求解器的边界
-
-本方法论**不**使用均值方差优化(MPT)等数学求解器。原因:
-
-| 维度 | MPT | 本方法论 |
-|---|---|---|
-| 求解目标 | 单点最优权重 | **3 个代表性骨架** |
-| 输出形式 | 点估计 | **区间** |
-| 对输入误差的敏感度 | 高(小误差导致大权重变化) | **低**(骨架天然稳健) |
-| 可解释性 | 数学化,客户难懂 | **规则化,客户可参与** |
-| 与家庭事件的耦合 | 弱(假设约束不变) | **强(事件驱动)** |
-| 客户的角色 | 旁观者 | **共同改写剧本** |
-
-**这并不意味着本方法论反数学:** 计算引擎在区间宽度收窄、跨期衔接、回撤校验时,会用到基础数学(蒙特卡洛、区间运算)。但**最关键的"骨架生成"步骤是基于规则的**,不是基于优化的。
-
----
-
-## 6. 不确定性传递
-
-事件越临近,剧本应越精确。这通过**区间宽度收窄**实现:
-
-### 6.1 收窄规则
-
-- 距离事件 ≥ 10 年:区间宽度 = 模板宽度(默认,如 固收 30-45%)
-- 距离事件 5-10 年:区间宽度 = 模板宽度 × 0.75
-- 距离事件 2-5 年:区间宽度 = 模板宽度 × 0.50
-- 距离事件 < 2 年:区间宽度 = 模板宽度 × 0.25(几乎收敛到点估计)
-
-> 注:上述“不确定性收窄”规则现已在 `engine.uncertainty` 这个 helper 模块中恢复实现;但当前客户剧本主链路的核心输出,仍主要由 bucket 级按时间分层的权重切换与年度净结余分配逻辑驱动。
-
-### 6.2 收窄的边界
-
-- 即使在 < 2 年区间,仍保留至少 ±5% 的带宽(不收敛到点)
-- 这避免了"伪精确":给客户错误的"我已经知道最优解"印象
-
-### 6.3 客户沟通
-
-剧本叙事中需明确:
-- "这一阶段是**精确期**"(< 2 年):客户与顾问应锁定具体方案
-- "这一阶段是**预备期**"(2-5 年):保持弹性,定期回顾
-- "这一阶段是**展望期**"(≥ 10 年):仅供长期视角参考
-
----
-
-## 7. 边界与不适用
-
-### 7.1 不适用场景
-
-- **需要 MPT 求解的具体单点权重**(本方法论不提供)
-- **学术研究 / 历史回测**(本方法论面向真实家庭,非研究)
-
-### 7.2 顾问介入边界
-
-- 区间宽度的**大幅调整**(超出模板默认 ±50%)需顾问审核
-- 跨期衔接的**异常处理**需顾问介入
-- **新增/删除事件**需客户与顾问共同决策
-
----
-
-## 8. 与其他章节的关联
-
-| 本章内容 | 影响 |
-|---|---|
-| 三骨架生成 | 输出端剧本结构(详见 [`05-output-structure.md`](05-output-structure.md)) |
-| 跨期衔接 | 剧本叙事的"过渡期"标记 |
-| 不确定性传递 | 剧本叙事的三种风格 |
-| 资产大类假设 | 区间宽度的模板来源(详见 [`03-asset-assumptions.md`](03-asset-assumptions.md)) |
+Older prose about “three skeleton points” should be interpreted through the current runtime shape.
+Where old wording and current bucket logic differ, current bucket logic is the active contract.

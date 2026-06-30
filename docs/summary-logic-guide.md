@@ -1,907 +1,246 @@
-# 综合建议摘要生成逻辑说明
+# Executive Summary Logic Guide
 
-这份文档面向顾问，目的是把剧本中“综合建议摘要”的生成逻辑讲清楚，方便顾问：
+This document is written for advisors.
+Its purpose is to explain how the **Executive Summary** section of the playbook is generated, so advisors can:
 
-1. 自己理解这部分在说什么。
-2. 向客户解释为什么系统会得出这样的结论。
-3. 分清哪些是方法论口径，哪些只是表达层的通俗翻译。
+1. understand what the section is doing
+2. explain to clients why the playbook reaches those conclusions
+3. distinguish methodology logic from plain-language presentation
 
-本文档只解释逻辑和公式，不解释代码实现。
+This document explains logic and interpretation, not code details.
 
----
+## 1. What the Executive Summary Is For
 
-## 1. 这部分到底在做什么
+The Executive Summary is not an independent second opinion layered on top of the playbook.
+It is a compressed reading layer that pulls the most decision-relevant conclusions to the front.
 
-“综合建议摘要”不是另起一套独立判断，而是把整份剧本里最重要的计算结果，先浓缩成顾问和客户都能快速理解的结论页。
+Its job is to answer five questions quickly:
 
-它回答五类问题：
+1. Can the recorded major milestones be covered?
+2. If there is a surplus account, what does its long-run return range look like?
+3. What stage is the household in right now, and what should be handled first?
+4. Is there an obvious protection gap in the insurance structure?
+5. What signals should be monitored, and what changes should trigger recalculation?
 
-1. 这家人的重大节点，按当前资料看能不能覆盖。
-2. 如果有富余资金，长期持有的大致增长区间是什么。
-3. 当前家庭处在哪个阶段，最需要优先处理什么。
-4. 保障结构有没有明显短板，补保障时该先看什么。
-5. 哪些指标要持续看，哪些变化一出现就应该重算。
+## 2. The Summary Uses Existing Results
 
-对客户的说法是：
+The Executive Summary does not create a separate model.
+It reads from the same underlying outputs as the rest of the playbook:
 
-- 这不是投资推荐。
-- 这也不是一次性给出“唯一正确答案”。
-- 它更像是一张家庭资产规划的“当前路线图”。
+- client profile
+- major milestone projection
+- yearly cash-flow projection
+- allocation plan
+- bucket projection with return ranges
+- insurance structure analysis
 
-对顾问的理解是：
+So when the summary changes, it should usually be because the underlying planning inputs or calculations changed.
 
-- 它本质上是把输入问卷转成一组年度现金流和节点覆盖计算。
-- 再把这些结果映射成客户能听懂的决策语言。
+## 3. The Highest-Level Conclusions
 
----
+The current summary starts with two high-level conclusions.
 
-## 2. 摘要依赖哪些基础数据
+### 3.1 Major Milestone Coverage Conclusion
 
-“综合建议摘要”本身不单独采集信息，它依赖整份问卷中的以下输入：
+This conclusion answers:
 
-### 2.1 家庭成员与人生节点
+- Under the current profile and assumptions, can the recorded major milestones be covered?
 
-- 家庭成员
-- 年龄
-- 当前收入
-- 未来起薪年龄与起薪金额
-- 退休年龄
-- 退休后收入
-- 当前支出
-- 退休后支出折算系数
-- 重大支出节点及发生年份
+If every milestone is covered:
 
-### 2.2 家庭现金流
+- the summary states that the milestones can be covered
+- it usually mentions the last milestone and the approximate remaining balance afterward
 
-- 当前家庭总收入
-- 当前家庭总支出
-- 负债月供
-- 保险保费
-- 退休后医疗支出与自付比例
+If a shortfall exists:
 
-### 2.3 资产与负债
+- the summary identifies the earliest uncovered milestone
+- it reports the approximate funding gap
 
-- 金融资产总额
-- 房产估值
-- 未偿负债余额
-- 流动性储备目标月数
+Why this comes first:
 
-### 2.4 保险信息
+- clients usually care first about whether the plan “works” for the life events they already know about
 
-- 是否已有医疗险
-- 定期寿险保额
-- 重疾险保额
-- 各类保费
+### 3.2 Long-Term Surplus Account Return Conclusion
 
-### 2.5 测算设置
+This conclusion appears when a separate surplus account exists.
 
-- 当前年份
-- 测算截止年份
-- 风险偏好
-- 大类资产收益率、波动率、相关性假设
+It answers:
 
----
+- If long-horizon surplus capital is held through the current modeled horizon, what does the rough annualized growth range look like?
 
-## 3. 摘要生成的总流程
+The summary communicates:
 
-可以把整套逻辑理解成五步。
+- a middle annualized outcome
+- a weaker long-run range
+- a stronger long-run range
 
-### 第一步：把问卷转成逐年现金流
+Why it matters:
 
-系统先把每一年看作一个独立年度，口径统一为“年末累计”，不再用月度复利。
+- it helps distinguish milestone funding from true long-term capital
+- it gives clients a useful way to think about the role of surplus money without turning the playbook into a product pitch
 
-每一年先算：
+## 4. Overall Stage Reading
 
-- 年收入
-- 年常规支出
-- 年保费
-- 年负债支出
-- 当年重大节点支出
+After the headline conclusions, the summary gives a current-stage reading.
 
-然后先得到“不含重大节点支出”的常规年净现金流。
+This is not based on a single score.
+It is chosen from a set of rule-based cues such as:
 
-基础公式是：
+- whether current monthly surplus is negative
+- whether an early shortfall already appears in the milestone projection
+- whether a major event is close in time
+- whether retirement cash-flow pressure is approaching
+- whether a meaningful surplus account already exists
 
-\[
-\text{常规年净现金流}_t = \text{年收入}_t - \text{年常规支出}_t - \text{年保费}_t - \text{年负债支出}_t
-\]
+The current logic typically classifies the household into one of these states:
 
-这里的关键点有三个：
+- cash-flow repair first
+- goal trade-off and budget reordering first
+- near-term milestone protection first
+- retirement preparation brought forward
+- sustainable long-term growth after bucket separation
+- mid-term accumulation in progress
 
-1. 所有重大支出不并入“常规年净现金流”，而是在节点推演或年度余额里按事件发生当年的年末单独扣减。
-2. 未来收入与退休后收入，都是按成员口径逐年切换。
-3. 退休后医疗支出会单独进入退休后支出体系。
+Why this matters:
 
-### 第二步：计算重大节点能否被覆盖
+- it gives the client a practical frame for reading the rest of the playbook
+- it keeps the summary action-oriented rather than descriptive only
 
-系统从当前金融资产出发，逐年累加净现金流，到每个重大节点年份再扣减该节点支出。
+## 5. Top Priorities
 
-公式可以写成：
+The next part extracts the most useful actions for the current case.
 
-\[
-\text{节点到达资产}_k
-=
-\text{期初金融资产}
-+ \sum_{t=\text{当前年}}^{\text{节点年}}
-\text{常规年净现金流}_t
-\]
+These are generated from the interaction between:
 
-\[
-\text{节点后余额}_k
-=
-\text{节点到达资产}_k - \text{节点支出}_k
-\]
+- current cash surplus
+- emergency reserve status
+- earliest underfunded bucket
+- nearest milestone
+- retirement gap
+- whether a long-term surplus account already exists
 
-如果：
+Typical action patterns include:
 
-\[
-\text{节点后余额}_k \ge 0
-\]
+- repair monthly cash flow first
+- refill the emergency buffer first
+- lock near-term milestone money separately
+- keep funding the nearest underfunded bucket on schedule
+- separate long money from near money
+- prepare for post-retirement cash-flow gap
 
-说明该节点可覆盖。
+These are not product recommendations.
+They are priority-order planning actions.
 
-如果：
+## 6. Insurance Structure Suggestion
 
-\[
-\text{节点后余额}_k < 0
-\]
+The current insurance paragraph is intentionally modest in scope.
 
-说明该节点有缺口。
+It does **not** attempt full insurance product planning, because the questionnaire does not yet collect the inputs required for a full recommendation engine, such as:
 
-这一步对应摘要里的“重大节点覆盖结论”。
+- actual household premium burden
+- product terms and policy details
+- product-level premium-to-coverage trade-offs
 
-### 第三步：做资产分层
+So the current summary focuses on **structure gaps**, not product design.
 
-节点覆盖算完以后，系统会把金融资产分成几层：
+It looks for missing or weak areas such as:
 
-1. 应急储备
-2. 各个重大节点对应的心理账户
-3. 富余资金账户
+- medical coverage
+- critical illness coverage
+- term life coverage for key earners
 
-应急储备的基础公式是：
+And it combines that with basic premium-pressure awareness:
 
-\[
-\text{应急储备目标}
-=
-\text{月度总支出} \times \text{流动性储备月数}
-\]
+- if cash flow is already tight, the summary should not imply “buy everything at once”
+- if protection gaps exist, the advice should emphasize priority order and affordability discipline
 
-其中：
+## 7. Monitoring Signals
 
-\[
-\text{月度总支出}
-=
-\text{月常规支出} + \text{月负债支出} + \text{月保费}
-\]
+The summary then highlights a short list of signals worth monitoring over time.
 
-再往后，剩余金融资产和未来年度结余，会按时间顺序去服务各个节点。
+These usually include:
 
-如果扣除应急层和节点层后还有剩余，就形成“富余资金账户”。
+- monthly surplus relative to its current baseline
+- whether the emergency reserve stays ring-fenced
+- whether the nearest underfunded bucket is progressing on schedule
+- the tightest year in regular net cash flow
+- debt-service burden
+- post-retirement monthly gap
+- whether surplus capital is being pulled forward to support near-term needs
 
-### 第四步：对长期资产做收益情景推演
+Why this matters:
 
-这一步不是为了给出投资建议，而是为了回答：
+- clients do not need to monitor every number
+- they do need a short list of “watch these first” signals
 
-- 如果把钱长期放着，大概会长成什么样。
-- 偏保守、常见、偏顺利几种结果区间分别在哪。
+## 8. Recalculation Triggers
 
-这一步的核心不是单一确定值，而是情景分布。
+The final part of the summary lists changes that should trigger recalculation.
 
-单年资产演化可以近似写成：
+These are currently framed around real-life changes, such as:
 
-\[
-W_{t+1} = W_t \times (1 + r_t) + CF_t - E_t
-\]
+- meaningful income change
+- meaningful spending or debt-payment change
+- adding, removing, moving, or resizing a major milestone
+- retirement timing change
+- education path change
+- housing-plan change
+- prolonged use of the emergency layer
+- early use of the surplus account
 
-其中：
+The underlying principle is:
 
-- \(W_t\)：第 \(t\) 年年初资产
-- \(r_t\)：该年资产组合收益率
-- \(CF_t\)：当年净现金流
-- \(E_t\)：当年重大事件支出
+- recalculation is driven more by household-fact changes than by day-to-day market noise
 
-系统对 \(r_t\) 不只取一个数，而是基于风险偏好和大类资产假设，生成多条可能路径，再从这些路径里抽出：
+## 9. Why the Summary Uses Plain Language
 
-- 偏保守结果
-- 常见结果
-- 更居中的结果
-- 偏顺利结果
+The playbook uses quantified logic underneath, but the summary avoids overly technical vocabulary where possible.
 
-摘要里的“富余资金长期收益结论”，本质上就是对富余资金账户从当前年持有到测算截止年的复合年增长率做区间表达。
+For example, instead of leading with percentile jargon:
 
-复合年增长率公式是：
+- use “weaker outcome range”
+- use “common range”
+- use “middle outcome”
+- use “stronger outcome range”
 
-\[
-\text{年化增长率}
+The aim is not to hide rigor.
+The aim is to present rigor in a form clients can use.
 
-=
-\left(\frac{\text{期末价值}}{\text{期初价值}}\right)^{1/n} - 1
-\]
+## 10. What the Summary Does Not Do
 
-其中 \(n\) 是持有年数。
+The Executive Summary does **not**:
 
-摘要层不会直接把它写成统计术语，而是翻译成：
+- replace the detailed projection tables
+- replace the bucket allocation logic
+- provide product recommendations
+- guarantee future returns or milestone success
+- replace legal, tax, actuarial, or insurance specialists
 
-- 更居中的结果
-- 偏保守结果
-- 偏顺利结果
+It is a reading layer and action-priority layer, not a substitute for the rest of the playbook.
 
-### 第五步：把计算结果翻译成客户语言
+## 11. Best Advisor Use
 
-前四步得到的是“结果”，第五步才是“表述”。
+Recommended advisor workflow:
 
-也就是说，摘要的每一段文字，其实都是由某几个判断规则触发出来的。
+1. Read the Executive Summary first
+2. Confirm that its claims match the underlying projection tables
+3. Use it as the opening frame in client discussion
+4. Move into the detailed sections only after the client understands the headline logic
 
----
+This keeps the conversation structured:
 
-## 4. 摘要各部分的生成逻辑
+- first the planning conclusion
+- then the reasoning
+- then the detailed mechanics
 
-目前“综合建议摘要”可以理解为“2 条最高层结论 + 5 个编号模块”：
+## 12. Relation to the Rest of the Methodology
 
-1. 重大节点覆盖结论 + 富余资金长期收益结论
-2. 现阶段的整体判断
-3. 现在最值得优先做的 3 件事
-4. 保障配置建议
-5. 后续需要持续关注的几个信号
-6. 出现哪些变化时，建议尽快重算
+The Executive Summary depends on the current methodology contract:
 
-页面显示时，前两条最高层结论不单独编号，但逻辑上可以把它理解为摘要最顶层。
+- input contract: [`handbook/01-input-schema.md`](../handbook/01-input-schema.md)
+- life-event logic: [`handbook/02-life-events.md`](../handbook/02-life-events.md)
+- asset assumptions: [`handbook/03-asset-assumptions.md`](../handbook/03-asset-assumptions.md)
+- output contract: [`handbook/05-output-structure.md`](../handbook/05-output-structure.md)
+- chart logic: [chart-and-qmc-logic-guide.md](chart-and-qmc-logic-guide.md)
 
----
-
-## 5. 重大节点覆盖结论是怎么来的
-
-### 5.1 基本规则
-
-系统会先看所有未来重大节点的“节点后余额”。
-
-如果所有未来节点都满足：
-
-\[
-\text{节点后余额}_k \ge 0
-\]
-
-则输出：
-
-- 已录入的重大支出节点整体可满足。
-
-并进一步取“最后一个未来节点”的节点后余额，作为结尾留存资产。
-
-即：
-
-\[
-\text{最后结余}
-=
-\text{最后一个未来节点的节点后余额}
-\]
-
-如果存在任何一个节点：
-
-\[
-\text{节点后余额}_k < 0
-\]
-
-则输出：
-
-- 并非所有重大支出节点都能满足。
-- 最早的缺口出现在第一个为负的节点。
-
-缺口金额公式是：
-
-\[
-\text{缺口}_k = |\text{节点后余额}_k|
-\]
-
-### 5.2 给客户怎么解释
-
-顾问可以这样解释：
-
-- 这不是在判断“总资产够不够”，而是在判断“按时间顺序走到每个节点时，手上能不能拿出这笔钱”。
-- 很多人资产总额看起来不少，但如果时间顺序错了、现金流承接不上，还是会在某个节点卡住。
-
-这句话对客户通常很重要，因为它把“总财富”与“可兑现性”分开了。
-
----
-
-## 6. 富余资金长期收益结论是怎么来的
-
-### 6.1 先决条件
-
-只有在以下两个条件同时满足时，才会输出这条结论：
-
-1. 已经分出了独立的富余资金账户。
-2. 收益情景推演可用。
-
-否则，系统会退回到两种保守说法之一：
-
-1. 没有富余资金账户，因此暂不单独讨论。
-2. 收益区间暂时还没算出，需要等收益推演可用。
-
-### 6.2 计算口径
-
-系统先对富余资金账户生成多条长期持有路径，再把每条路径对应成一条复合年增长率。
-
-对每条路径 \(i\)：
-
-\[
-g_i = \left(\frac{V_{i,\text{end}}}{V_{i,\text{start}}}\right)^{1/n} - 1
-\]
-
-然后再从所有 \(g_i\) 中取几档代表性区间。
-
-摘要不写“分位数”这类客户不熟悉的词，而是转述成：
-
-- 更居中的结果
-- 偏保守的结果
-- 偏顺利的结果
-
-### 6.3 给客户怎么解释
-
-顾问可以说：
-
-- 这里不是在承诺收益。
-- 它只是把同一套资产假设下，长期持有可能出现的结果范围讲清楚。
-- 所以它回答的不是“能赚多少”，而是“长期大概落在什么区间更合理”。
-
-### 6.4 顾问要注意的边界
-
-- 这条结论只适用于富余资金，不适用于未来几年内就要动用的节点资金。
-- 如果客户把这部分钱中途拿出来填补近期节点，原来的长期结果区间就不再成立。
-
----
-
-## 7. “现阶段的整体判断”是怎么来的
-
-这一段的作用，是给客户一个“当前最核心矛盾是什么”的判断。
-
-系统不是同时说很多话，而是按优先级选一个最主导的阶段判断。
-
-### 7.1 判断优先级
-
-优先级从高到低是：
-
-1. 现金流修复优先
-2. 目标取舍与预算重排优先
-3. 近期节点保障优先
-4. 退休准备前置
-5. 分层后可持续增值
-6. 中期积累推进
-
-### 7.2 各条规则
-
-#### 规则 1：现金流修复优先
-
-如果：
-
-\[
-\text{月度净结余} < 0
-\]
-
-则优先输出“现金流修复优先”。
-
-其中：
-
-\[
-\text{月度净结余}
-=
-\text{月收入} - \text{月常规支出} - \text{月负债} - \text{月保费}
-\]
-
-顾问解释：
-
-- 如果月度本身就在流血，先修复现金流，再谈长期规划。
-
-#### 规则 2：目标取舍与预算重排优先
-
-如果月度净结余不为负，但未来节点里存在缺口，则进入这一档。
-
-即存在：
-
-\[
-\text{节点后余额}_k < 0
-\]
-
-顾问解释：
-
-- 这说明问题不一定是今天没钱，而是未来目标排布和预算顺序冲突了。
-
-#### 规则 3：近期节点保障优先
-
-如果最近一个未来节点距离当前不超过 3 年，则优先进入“近期节点保障优先”。
-
-公式上是：
-
-\[
-\text{最近节点年份} - \text{当前年份} \le 3
-\]
-
-顾问解释：
-
-- 3 年内要用的钱，重点不再是追求高收益，而是先确保到点拿得出来。
-
-#### 规则 4：退休准备前置
-
-如果主要收入者距离退休不超过 10 年，且退休后月度缺口为正，则进入这一档。
-
-退休缺口公式是：
-
-\[
-\text{退休后月度缺口}
-=
-\text{退休后月支出} - \text{退休后月收入}
-\]
-
-如果：
-
-\[
-\text{退休后月度缺口} > 0
-\]
-
-且：
-
-\[
-\text{距退休年数} \le 10
-\]
-
-则提示退休准备要前置。
-
-#### 规则 5：分层后可持续增值
-
-如果满足应急层和节点层后，仍然有富余资金账户，说明已经进入“分层后可持续增值”阶段。
-
-#### 规则 6：中期积累推进
-
-如果以上都不触发，就进入默认状态：目前没有硬冲突，但仍要按顺序持续积累。
-
-### 7.3 补充判断：应急层是否独立站稳
-
-这一段通常还会补一句应急层是否已经独立划出。
-
-规则是比较：
-
-\[
-\text{金融资产总额} \ge \text{应急储备目标}
-\]
-
-如果成立，说明应急缓冲已具备独立性。
-
-否则说明缓冲垫还偏薄。
-
----
-
-## 8. “现在最值得优先做的 3 件事”是怎么来的
-
-这一段不是凭空写建议，而是从一组候选动作中按条件触发，最多取三条。
-
-### 8.1 常见候选动作
-
-候选动作主要有：
-
-1. 先修复现金流本身
-2. 先补足应急缓冲
-3. 优先重排最近会出缺口的目标
-4. 把最近节点资金单独锁定
-5. 按年度进度补最近未达标账户
-6. 把长钱与近钱分开
-7. 提前为退休后的现金流断层做准备
-8. 单独复核责任型保障结构
-
-### 8.2 触发规则
-
-#### 动作 1：先修复现金流本身
-
-条件：
-
-\[
-\text{月度净结余} < 0
-\]
-
-#### 动作 2：先补足应急缓冲
-
-条件：
-
-\[
-\text{金融资产总额} < \text{应急储备目标}
-\]
-
-#### 动作 3：优先重排最近会出缺口的目标
-
-条件：
-
-存在最早缺口节点。
-
-#### 动作 4：把最近节点资金单独锁定
-
-条件：
-
-最近未来节点距离当前不超过 3 年，且尚未进入缺口优先情形。
-
-#### 动作 5：按年度进度补最近未达标账户
-
-系统会找出第一个“目标金额大于初始划拨金额”的节点账户。
-
-该账户的年度进度公式是：
-
-\[
-\text{年均待补进度}
-=
-\frac{\text{目标金额} - \text{初始划拨金额}}{\text{距今年数} + 1}
-\]
-
-注意这里是管理口径，不是收益率口径。
-
-它的作用是告诉顾问：
-
-- 这笔目标不能只说“以后慢慢补”，而要有一个大致的年度节奏。
-
-#### 动作 6：把长钱与近钱分开
-
-条件：
-
-存在富余资金账户，且初始富余资金大于 0。
-
-#### 动作 7：提前为退休后的现金流断层做准备
-
-条件：
-
-\[
-\text{退休后月度缺口} > 0
-\]
-
-#### 动作 8：单独复核责任型保障结构
-
-条件：
-
-同时满足：
-
-1. 当前没有体现有效定期寿险。
-2. 家庭仍有抚养责任、负债，或负债压力偏高。
-
-这里的逻辑不是说“必须立刻买保险”，而是说：
-
-- 这类风险不应该默认由投资账户被动承担。
-
-### 8.3 给客户怎么解释
-
-顾问可以这样说：
-
-- 这三件事不是全部事情，而是现在最先做、最影响结果的三件事。
-- 先后顺序比内容本身更重要。
-
----
-
-## 9. “保障配置建议”是怎么来的
-
-这是摘要里专门面向保险结构的一段，但边界非常明确：
-
-- 只做结构建议。
-- 不做产品推荐。
-- 不做精确保额测算。
-- 不做精确保费测算。
-
-### 9.1 为什么要单独做这段
-
-因为客户往往会把“资产规划”和“保险规划”混在一起。
-
-系统加这一段，是为了帮助顾问把逻辑拆开：
-
-1. 资产规划解决的是“钱怎么分层、怎么承接未来节点”。
-2. 保障规划解决的是“如果关键人或关键风险发生，哪些冲击不应该完全由资产账户硬扛”。
-
-### 9.2 核心判断框架
-
-这一段按“先结构、后节奏”的思路来判断。
-
-先看三类结构：
-
-1. 医疗保障
-2. 重疾保障
-3. 定期寿险
-
-再看两个约束：
-
-1. 家庭责任是否仍重
-2. 当前现金流是否能承受新增保费
-
-### 9.3 结构缺口规则
-
-#### 医疗保障缺口
-
-如果系统里没有体现已有医疗保障，则视为医疗保障缺口。
-
-可以写成：
-
-\[
-\text{MedicalGap} =
-\begin{cases}
-1, & \text{若无医疗保障}\\
-0, & \text{若有医疗保障}
-\end{cases}
-\]
-
-#### 重疾保障缺口
-
-如果关键收入成员存在，但当前没有体现重疾保障，则视为重疾保障缺口。
-
-#### 定期寿险缺口
-
-如果家庭仍有责任期，但当前没有体现定期寿险，则视为定寿缺口。
-
-这里“责任期”可以理解为以下任一条件成立：
-
-1. 有未完成抚养责任
-2. 有未清负债
-3. 未来仍有明确重大节点支出
-
-### 9.4 保费压力规则
-
-如果满足以下任一条件，就认为当前保费压力偏敏感：
-
-1. 保费占月收入比达到较高水平
-2. 当前月度净结余已偏紧或为负
-3. 节点覆盖本身已经出现缺口
-
-保费负担率公式是：
-
-\[
-\text{保费负担率}
-=
-\frac{\text{月保费}}{\text{月收入}}
-\]
-
-### 9.5 输出逻辑
-
-#### 情形 A：有明显结构缺口，且现金流也紧
-
-输出思路：
-
-- 建议补，但不建议一次性全面铺开。
-- 先补关键收入成员、关键风险。
-- 避免新增保费反过来挤压重大节点资金。
-
-#### 情形 B：有明显结构缺口，但现金流还能承受
-
-输出思路：
-
-- 建议优先复核关键收入成员的医疗、重疾、定寿是否齐全。
-- 先补基础保障，再考虑长期锁定型保险安排。
-
-#### 情形 C：基础保障已有一定覆盖，但保费压力较高
-
-输出思路：
-
-- 当前重点不是继续加保，而是确认现有保费压力是否长期可承受。
-
-#### 情形 D：结构没有明显短板
-
-输出思路：
-
-- 更适合定期复核，而不是明显加码。
-
-### 9.6 给客户怎么解释
-
-顾问可以这样说：
-
-- 我们现在不是在推荐具体保险产品，而是在判断家庭保障结构是不是有明显短板。
-- 如果短板存在，再讨论要不要补、先补什么。
-- 如果现金流本身就紧，保障补齐也要讲顺序，而不是一口气把所有风险都堆满。
-
----
-
-## 10. “后续需要持续关注的几个信号”是怎么来的
-
-这一段的作用，是告诉客户以后不要只看总资产涨跌，而要盯几个真正会改变剧本结果的指标。
-
-当前主要包括以下信号。
-
-### 10.1 月度净结余
-
-公式：
-
-\[
-\text{月度净结余}
-=
-\text{月收入} - \text{月常规支出} - \text{月负债} - \text{月保费}
-\]
-
-这是最底层的总开关。
-
-顾问解释：
-
-- 只要这个数长期下滑，后面所有节点安排都会受影响。
-
-### 10.2 应急层是否仍独立保留
-
-关注点不是“有没有应急储备概念”，而是“这笔钱有没有被挪用”。
-
-顾问解释：
-
-- 如果应急层被拿去补其他用途，长期规划会更脆弱。
-
-### 10.3 最近未达标目标账户进度
-
-系统会盯最近一个还没靠初始资金覆盖的节点账户。
-
-本质上是在看：
-
-\[
-\text{实际累计速度} \stackrel{?}{\ge} \text{目标累计速度}
-\]
-
-### 10.4 最紧年份的常规净现金流
-
-系统会在测算窗口内找出常规净现金流最低的一年。
-
-如果定义：
-
-\[
-\text{常规净现金流}_t
-=
-\text{年收入}_t - \text{年常规支出}_t - \text{年保费}_t - \text{年负债支出}_t
-\]
-
-则最紧年份是：
-
-\[
-t^* = \arg\min_t \text{常规净现金流}_t
-\]
-
-顾问解释：
-
-- 这不是最差年份的资产余额，而是最容易让预算压力暴露出来的年份。
-
-### 10.5 负债月供占收入比
-
-公式：
-
-\[
-\text{月供占收入比}
-=
-\frac{\text{月负债支出}}{\text{月收入}}
-\]
-
-顾问解释：
-
-- 这个比例上升，会直接压缩未来节点的可执行空间。
-
-### 10.6 退休后月度缺口
-
-如果退休后存在缺口，系统也会把它列为持续观察指标。
-
----
-
-## 11. “出现哪些变化时，建议尽快重算”是怎么来的
-
-这一段的逻辑，不是重新判断规划优劣，而是判断“原来的假设是否已经变了”。
-
-### 11.1 收入变化
-
-如果收入明显变化，尤其下降明显，就应该重算。
-
-系统用的是相对阈值。
-
-例如：
-
-\[
-\Delta \text{收入} \le -20\%
-\]
-
-则触发重算提示。
-
-### 11.2 重大节点变化
-
-如果发生以下变化之一，就应重算：
-
-1. 新增节点
-2. 提前节点
-3. 取消节点
-4. 放大节点金额
-
-因为这会直接改变资金分层顺序。
-
-### 11.3 常规支出或负债变化
-
-如果月度总支出出现明显抬升，也应重算。
-
-### 11.4 退休、教育、购房等关键人生路径变化
-
-这类变化往往比市场波动更能改变结论。
-
-### 11.5 金融资产大额进出或保障结构变化
-
-如果资产大额进出，或者保障结构明显改变，也要重算。
-
-顾问可以这样解释：
-
-- 重算并不代表之前做错了。
-- 它只是说明家庭现实发生了变化，原来的剧本需要更新版本。
-
----
-
-## 12. 顾问向客户解释时的推荐话术框架
-
-建议顾问按以下顺序解释摘要。
-
-### 第一句：先讲目的
-
-“这部分不是在告诉您买什么产品，而是在回答：按现在这份家庭资料，哪些目标能覆盖、当前最该先处理什么。”
-
-### 第二句：先讲节点能否覆盖
-
-“我们先看未来几个重要年份的钱够不够，这决定整份规划是不是站得住。”
-
-### 第三句：再讲当前阶段
-
-“如果能覆盖，再看您现在最主要的问题是近期节点、退休承接，还是已经可以把一部分钱当长期资金管理。”
-
-### 第四句：再讲动作顺序
-
-“真正影响结果的，不是做很多事，而是顺序对不对。”
-
-### 第五句：最后讲保障
-
-“保障这块我们现在只看结构有没有短板，不直接讨论具体产品。因为如果家庭责任还在，某些风险不应该完全靠投资账户去硬扛。”
-
----
-
-## 13. 这部分的边界
-
-顾问在解释时要特别注意以下边界。
-
-### 13.1 它不是投资建议
-
-摘要里出现“长期增长”“结果区间”，不等于推荐具体资产配置或产品。
-
-### 13.2 它不是保险销售建议
-
-“保障配置建议”只说明结构缺口，不说明具体买哪款产品、买多少保额。
-
-### 13.3 它依赖输入质量
-
-如果客户的收入、退休、支出、节点金额填得不完整，摘要的结论也只能反映当前输入，不代表客观真相。
-
-### 13.4 它是当前版本结论
-
-只要人生节点、收入支出、资产负债、保障结构发生明显变化，都应该重算。
-
----
-
-## 14. 顾问最容易讲错的几点
-
-### 14.1 把“资产总额够”讲成“节点一定没问题”
-
-错误。
-
-正确讲法是：
-
-- 要看时间顺序和每年现金流承接，而不是只看总额。
-
-### 14.2 把长期收益区间当成收益承诺
-
-错误。
-
-正确讲法是：
-
-- 这是方法论下的可能结果范围，不是承诺值。
-
-### 14.3 把保障配置建议讲成产品推荐
-
-错误。
-
-正确讲法是：
-
-- 我们先判断结构是否缺、补的优先级是什么，再决定是否进一步细化。
-
-### 14.4 把“建议重算”讲成“原方案错了”
-
-错误。
-
-正确讲法是：
-
-- 家庭规划本来就应该随着现实变化而更新。
-
----
-
-## 15. 一句话总结给顾问
-
-“综合建议摘要”的本质，不是再做一遍规划，而是把整份剧本最关键的年度现金流、节点覆盖、资金分层、长期情景和保障结构判断，翻译成客户能立刻理解并能据此行动的结论页。
+If summary wording and current calculation ever diverge, trust the current calculation first and update the wording afterward.

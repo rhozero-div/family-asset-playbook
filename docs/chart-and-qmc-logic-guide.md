@@ -1,682 +1,253 @@
-# 图表、收益测算与 QMC 逻辑说明
+# Charts, Return Projection, and QMC Logic Guide
 
-这份文档面向顾问，专门解释剧本里的图表、收益测算逻辑，以及 `QMC` 在当前系统中的作用。
+This document is written for advisors.
+Its purpose is to explain the charts in the playbook, the logic behind return projection, and the role of `QMC` in the current system.
 
-目标不是让顾问学习量化或编程，而是帮助顾问回答三类问题：
+The goal is not to teach quant finance or programming.
+The goal is to help an advisor answer three practical questions:
 
-1. 每张图到底在展示什么。
-2. 图上的区间、曲线、色块是怎么算出来的。
-3. 顾问应该怎么向客户解释这些图，既不失真，也不过度技术化。
+1. What each chart is actually showing
+2. How the bands, lines, and shaded areas are produced
+3. How to explain the charts to a client without becoming overly technical
 
-本文档只讲当前系统真实使用的逻辑，不讲代码细节。
+This document explains the **current production logic**, not implementation details.
 
----
+## 1. The Two Main Chart Families
 
-## 1. 先讲结论：这些图表到底分成哪几类
+The current playbook uses two broad families of charts and tables.
 
-当前剧本里的图表和表格，大体分成两组：
+### 1.1 Deterministic Projection
 
-### 1.1 确定性部分
+These outputs answer:
 
-这组图表回答的是：
+- If we ignore investment return for a moment, can the household still cover each major milestone?
+- How much money is available at each major event year?
+- Where does the first shortfall appear, if any?
 
-- 如果先不考虑投资收益，只按当前资产和未来现金流去推，重大节点能不能覆盖。
+This layer is useful because it isolates the funding question before adding market uncertainty.
 
-它的特点是：
+### 1.2 Return-Based Projection
 
-- 更像“保底口径”
-- 更适合解释重大节点是否可兑现
-- 不强调市场波动
+These outputs answer:
 
-### 1.2 含收益情景部分
+- If the allocated buckets participate in investment return, how wide is the range of possible outcomes?
+- How does the total household asset path behave over time?
+- How do individual buckets behave under weaker and stronger market paths?
 
-这组图表回答的是：
+This layer does **not** promise a return.
+It is a communication tool for discussing plausible ranges under current assumptions.
 
-- 如果资产按当前风险偏好去运行，长期大致会落在什么范围。
-- 各个心理账户在不同年份大致会长成什么样。
+## 2. What the Main Charts Mean
 
-它的特点是：
+### 2.1 Total Household Asset Path
 
-- 不是只给一个结果
-- 会给一个从偏保守到偏顺利的区间
-- 更适合解释“长期大概会怎样”，不适合解释“某一年一定会怎样”
+This chart combines:
 
----
+- annual cash inflow
+- annual cash outflow
+- the deterministic cash-flow reference line
+- return-based percentile bands for the total portfolio
 
-## 2. 当前页面中，顾问真正会用到哪些图表
+How to explain it:
 
-按客户阅读顺序，当前剧本里的核心图表和表格主要是下面这些：
+- the bars show household cash movement
+- the dashed reference line shows what happens without investment return
+- the shaded range shows how total assets may vary if investment return is included
 
-1. `现金流与资产余额时序（含投资收益）`
-2. `事件节点推演` 表
-3. `C1. 初始存量资金分配`
-4. `C2. 年度净结余分配`
-5. `C3. 心理账户余额（居中情景）`
-6. `C4. 心理账户余额（按阶段着色）`
-7. `C5. 各层余额时序堆叠`
-8. `C6. 各层余额与资金来源`
+Important point:
 
-其中，真正和 `QMC` 直接相关的是：
+- the return-based line is **not guaranteed to stay above** the no-investment reference
+- investment can help, but it can also underperform in some paths
 
-1. `现金流与资产余额时序（含投资收益）`
-2. `C3`
-3. `C4`
-4. `C5`
-5. `C6`
+### 2.2 Bucket Balance Timeline
 
-`事件节点推演`、`C1`、`C2` 主要还是确定性逻辑。
+This chart stacks all buckets together, such as:
 
----
+- emergency reserve
+- event buckets
+- surplus account
 
-## 3. 什么是 QMC，在这里到底起什么作用
+How to explain it:
 
-顾问不需要把 `QMC` 当成数学模型去讲。对客户来说，最自然的解释是：
+- each color block is one mental account
+- event buckets are built up before their event year and then withdrawn at the end of that year
+- the outer band shows the range for the total portfolio under return assumptions
 
-- 系统不会只假设未来只有一条路径。
-- 它会生成很多条“可能发生的市场路径”。
-- 然后看这些路径里，大多数结果会落在哪里。
+### 2.3 Bucket Funding Source Charts
 
-这就是这里 `QMC` 的实际用途。
+These charts expand each bucket separately.
+They typically show:
 
-### 3.1 通俗解释
+- starting balance carried from the prior year
+- current-year cash contribution
+- current-year investment return
+- the resulting year-end balance band
 
-可以把它理解成：
+How to explain it:
 
-- 不是问“未来会怎样”。
-- 而是问“如果未来有很多种可能，这些可能大致会集中在哪些范围”。
+- they help the client see **where the money came from**
+- they separate savings discipline from market contribution
+- they show that a bucket can have negative return in a year even when the long-run balance still grows
 
-### 3.2 为什么不用单一路径
+## 3. What the Percentile Bands Mean
 
-如果只用一条路径，问题会很大：
+The playbook commonly uses five bands:
 
-1. 看起来很确定，但其实是假确定。
-2. 一旦客户把那条线当成承诺，就容易误解。
-3. 对长期资金尤其不合适，因为长期的不确定性本来就比短期更大。
+- `p10`
+- `p25`
+- `p50`
+- `p75`
+- `p90`
 
-### 3.3 为什么不用完全随机抽样，而用 QMC
+For client communication, avoid saying `p10` or `p90` unless needed.
+Prefer plain-language phrasing:
 
-顾问可以把这件事讲得很简单：
+- weaker outcome range
+- common range
+- middle outcome
+- stronger outcome range
 
-- 普通随机抽样像“随手撒点”。
-- `QMC` 更像“尽量把点铺得更均匀”。
+A practical interpretation:
 
-它的好处不是更神奇，而是：
+- `p50` is the middle outcome
+- `p25-p75` is the more common middle range
+- `p10-p90` is a wider outer range
 
-- 结果更稳定
-- 少量样本也比较容易把整体范围看清
-- 更适合这种“要看区间、不要只看单点”的家庭资产场景
+These are **distribution summaries**, not promises and not hard boundaries.
 
-### 3.4 当前系统里 QMC 生成了什么
+## 4. Why We Use QMC
 
-当前系统里，`QMC` 主要生成的是一组跨年度的市场扰动路径。
+`QMC` stands for Quasi-Monte Carlo.
 
-然后系统把这些路径叠加到每一年的资产组合收益上，得到：
+In plain language:
 
-1. 年度总资产可能路径
-2. 各心理账户可能路径
-3. 富余资金长期复合年增长率的区间
+- the system needs many possible market paths
+- a naive random simulation can be noisy
+- QMC generates a more even spread of paths, which usually makes the output more stable for the same number of samples
 
-所以，顾问可以把 `QMC` 理解为：
+What an advisor needs to know:
 
-- 它不是一个结论
-- 它只是系统生成“结果区间”的方法
+- QMC is a simulation-quality tool, not a claim that the future is knowable
+- it improves the smoothness and stability of the range estimates
+- it does not remove model risk
 
----
+## 5. What Actually Drives the Return Projection
 
-## 4. 收益测算的总逻辑
+The current return-based projection is driven by four ingredients:
 
-### 4.1 先有年度现金流，再叠加市场结果
+1. Asset-class return assumptions
+2. Asset-class volatility assumptions
+3. Correlation assumptions between asset classes
+4. Bucket-level stage weights over time
 
-收益测算不是脱离家庭现金流单独算的。
+The bucket logic matters because:
 
-系统先确定每一年的家庭基础动作：
+- near-term money is allocated more conservatively
+- long-term money can carry more growth exposure
+- the surplus account is treated as long-horizon capital unless a retirement switch changes its stage
 
-1. 这一年有多少收入
-2. 这一年有多少常规支出
-3. 这一年有没有重大事件支出
-4. 这一年资金大体处在什么阶段
+## 6. Why Bucket Logic Matters More Than a Single Portfolio Average
 
-然后才叠加市场波动。
+This methodology does not treat the household as one undifferentiated pool of money.
+It separates the household into buckets with different purposes.
 
-### 4.2 单年资产演化的基本形式
+That changes the interpretation materially:
 
-从顾问角度，可以把它理解成：
+- emergency money should behave differently from long-term surplus capital
+- money needed in 2 years should not be modeled like money needed in 20 years
+- the client can discuss each bucket separately instead of arguing about a single average portfolio
 
-\[
-\text{下一年年末资产}
-=
-\text{今年年初资产} \times (1 + \text{本年收益率})
-+ \text{本年净现金流}
-- \text{本年重大支出}
-\]
+This is one reason the playbook is more readable for family planning than a generic optimizer output.
 
-这里要注意三点：
+## 7. Why Event Timing Is End-of-Year
 
-1. 先有资产增减，再看重大事件是不是把钱拿走。
-2. 所有重大支出都是按年末口径扣减。
-3. 这个逻辑既用在总资产层，也会映射到各个心理账户层。
+The current system uses an annual, end-of-year convention:
 
-### 4.3 每年的收益率不是固定数
+- cash flow is aggregated by year
+- event spending happens at the end of the event year
+- yearly return is also applied on a yearly basis
 
-每年收益率不是写死的一个值，而是由三部分共同决定：
+This is a modeling choice made for consistency and clarity.
+It means:
 
-1. 当年的资金阶段
-2. 当年的资产配置权重
-3. `QMC` 给出的当年市场扰动
+- the charts are easier to explain
+- the cash-flow and bucket logic stay aligned
+- the system is not trying to act like a monthly execution planner
 
-所以，即使两个客户有一样的风险偏好：
+## 8. Why the Total Percentile Band Is Not the Sum of Bucket Percentiles
 
-- 只要人生节点时间不同
-- 只要现金流顺序不同
+This is important.
 
-结果也可能不同。
+The total portfolio percentile band is calculated from the **full portfolio path**, not by summing the `p10` or `p50` of each bucket independently.
 
----
+Why:
 
-## 5. 阶段与收益是怎么挂钩的
+- different buckets move together through shared market paths
+- percentiles are not additive
+- adding bucket percentiles directly would distort the range
 
-### 5.1 核心原则
+So if a client asks why the total band does not equal the sum of the visible bucket bands, the answer is:
 
-钱越快要用，越不适合承受高波动。
+- because the total band is calculated at the full-portfolio path level, which is the correct statistical treatment
 
-钱越晚才用，越能承受阶段性起伏。
+## 9. How To Explain Negative Return Years
 
-这就是剧本里“阶段”和“收益测算”挂钩的根本原则。
+In the current playbook, some years in the middle outcome can still show negative investment return.
 
-### 5.2 当前系统怎么判断阶段
+That is not a bug.
+It is actually useful:
 
-对总资产收益情景来说，系统主要看：
+- it reminds the client that investment return is uncertain
+- it prevents the chart from implying “investment always helps”
+- it makes the playbook more honest for discussion
 
-- 距离下一个重大节点还有多少年
+Good phrasing:
 
-对心理账户来说，系统主要看：
+- “This range includes years where market return may be negative, even if the long-run plan still remains workable.”
 
-- 这个账户自己距离提取年份还有多少年
+## 10. What the Charts Do Not Mean
 
-然后把时间分成几档：
+The charts do **not** mean:
 
-1. 近期
-2. 中期
-3. 远期
-4. 超远期
+- a guaranteed return
+- a promised funding outcome
+- a product recommendation
+- a precise forecast of market behavior
+- a replacement for legal, tax, actuarial, or insurance product advice
 
-不同档位对应不同的大类权重结构。
+They are a planning and communication tool under explicit assumptions.
 
-### 5.3 为什么退休后会变保守
+## 11. How Advisors Should Use These Charts
 
-系统会把退休后看作“持续支出阶段”，不是“继续冲长期增长阶段”。
+Recommended advisor posture:
 
-顾问可以这样解释：
+1. Start with milestone coverage, not return
+2. Use the total asset path to explain timing pressure
+3. Use bucket charts to explain funding order and account purpose
+4. Use the return ranges as scenario language, not prediction language
+5. Recalculate when household facts change, not only when markets move
 
-- 退休前更关注积累
-- 退休后更关注资金的可持续支付
+## 12. When To Recalculate Instead of Over-Explaining
 
-所以同一个家庭，退休前后的收益测算口径不应该完全一样。
+If a client changes:
 
----
+- a major event year
+- an event amount
+- retirement timing
+- household income
+- ongoing spending
+- debt burden
+- insurance structure
 
-## 6. “现金流与资产余额时序（含投资收益）”这张图怎么来的
+then recalculation is usually more useful than prolonged interpretation of an outdated chart.
 
-这是客户最容易盯着看的一张图，也是最容易被误解的一张图。
+## 13. Relation to the Handbook
 
-### 6.1 图里都有什么
+These charts sit on top of the current methodology contract:
 
-这张图同时放了几类信息：
+- event structure: [`handbook/02-life-events.md`](../handbook/02-life-events.md)
+- asset assumptions: [`handbook/03-asset-assumptions.md`](../handbook/03-asset-assumptions.md)
+- Pareto and stage logic: [`handbook/04-pareto-generation.md`](../handbook/04-pareto-generation.md)
+- output contract: [`handbook/05-output-structure.md`](../handbook/05-output-structure.md)
 
-1. 每年的现金流入
-2. 每年的现金流出
-3. 不考虑投资收益时的资产余额线
-4. 含投资收益后的结果区间
-5. 居中结果线
-
-### 6.2 每个元素在表达什么
-
-#### 现金流入柱
-
-表示当年的收入。
-
-#### 现金流出柱
-
-表示当年的支出，包括：
-
-1. 常规生活支出
-2. 负债支出
-3. 保费
-4. 当年重大事件支出
-
-#### 无投资收益余额线
-
-这是一个很重要的“对照组”。
-
-它回答的是：
-
-- 如果完全不把投资收益算进去，只靠现有资产和未来现金流，资产路径会怎样。
-
-顾问向客户解释时，可以把它称为：
-
-- 保守参考线
-- 不靠市场表现的基础路径
-
-#### 含投资收益的结果区间
-
-这不是说资产“一定会在这个区间内”，而是说：
-
-- 在当前方法论和当前假设下，大多数可能路径大致会落在这里
-
-#### 居中结果线
-
-这条线不是“承诺值”，更接近：
-
-- 在很多可能结果里，比它更高和更低的大致都不少
-- 所以它是中间位置的代表
-
-### 6.3 这张图的价值
-
-它最适合回答两个问题：
-
-1. 如果完全不靠市场，家庭资产大概会走成什么样。
-2. 如果按当前策略运行，长期大概会落在什么范围。
-
-### 6.4 顾问最容易讲错的地方
-
-错误讲法：
-
-- “黑线就是未来一定会发生的结果。”
-
-正确讲法：
-
-- 黑线只是居中结果，不是承诺值。
-
-错误讲法：
-
-- “灰线以上就是赚到，以下就是失败。”
-
-正确讲法：
-
-- 区间本身就是为了表达不确定性，不是成功线和失败线。
-
----
-
-## 7. “事件节点推演”表怎么来的
-
-这张表不直接依赖 `QMC`，它是确定性逻辑。
-
-### 7.1 它回答的问题
-
-- 走到每个关键节点时，钱够不够。
-
-### 7.2 表里每一列怎么理解
-
-#### 到达时累积资产
-
-公式是：
-
-\[
-\text{到达时累积资产}
-=
-\text{期初金融资产}
-+ \sum \text{节点前各年的常规净现金流}
-\]
-
-#### 所需支出
-
-就是该节点本身的预计金额。
-
-#### 支出后余额
-
-\[
-\text{支出后余额}
-=
-\text{到达时累积资产} - \text{节点支出}
-\]
-
-#### 状态
-
-如果支出后余额大于等于 0，就是盈余。
-
-如果小于 0，就是缺口。
-
-### 7.3 顾问怎么解释这张表
-
-这张表适合用来回答：
-
-- 当前目标安排在时间顺序上是不是站得住
-
-不适合用来回答：
-
-- 长期投资大概能赚多少
-
----
-
-## 8. C3 为什么叫“居中情景余额”
-
-### 8.1 这张表看什么
-
-`C3. 心理账户余额（居中情景）` 展示的是：
-
-- 每一个心理账户在每个年末，大致处于中间位置的余额
-
-也就是说，它不是最乐观，不是最悲观，而是“居中结果”。
-
-### 8.2 为什么不用单一确定值
-
-因为客户看到一列非常精确的数字，容易误以为：
-
-- 这是未来一定会发生的余额
-
-而用“居中情景”这个口径，更能提醒顾问和客户：
-
-- 它是很多可能结果中的中间代表值
-
-### 8.3 表里“初始划拨”是什么意思
-
-这不是未来结果，而是：
-
-- 当前时点先把钱按用途分层后，各账户一开始分到了多少
-
-后面的每一行才是：
-
-- 经过收益、结余流入、账户提取之后，该年年末大致还剩多少
-
-### 8.4 顾问怎么解释
-
-顾问可以说：
-
-- 这张表的作用，不是告诉您哪年一定剩多少钱。
-- 而是帮助您看到：不同用途的资金，在中间情景下会怎样逐年变化。
-
----
-
-## 9. C4 为什么只是 C3 的“阶段版”
-
-`C4. 心理账户余额（按阶段着色）` 与 `C3` 用的是同一组底层余额数据。
-
-区别只是：
-
-- `C3` 强调金额
-- `C4` 强调阶段
-
-### 9.1 阶段颜色在表达什么
-
-它不是收益高低，而是：
-
-- 这笔钱距离使用还有多久
-
-所以颜色和符号的核心含义是：
-
-1. 越接近要用，越要强调可兑现性
-2. 越远才用，越可以接受波动换增长
-
-### 9.2 为什么这张表对顾问有用
-
-因为顾问在和客户解释时，常见困难不是“看不懂金额”，而是：
-
-- 看不懂这些钱为什么不能混在一起
-
-这张表就是在视觉上把这个逻辑拆开。
-
----
-
-## 10. C5 “各层余额时序堆叠”怎么来的
-
-这张图把所有心理账户放在一张图里看。
-
-### 10.1 每个色块是什么
-
-每个色块代表某一个心理账户在该年年末的居中结果余额。
-
-所以这张图本质上是在回答：
-
-- 家庭总资产在不同年份，大致由哪些用途层构成
-
-### 10.2 外层灰色区间是什么
-
-外层灰色区间表示：
-
-- 总资产余额从偏保守到偏顺利的大致范围
-
-它不是某一个单独账户的范围，而是所有账户合起来后的总范围。
-
-### 10.3 为什么会有“某一层突然归零”
-
-因为某个节点一旦在该年年末发生，对应账户就会被提取掉。
-
-这不是图错了，而是设计本意：
-
-- 这个账户的存在，本来就是为了那个节点服务
-
-### 10.4 顾问该怎么解释
-
-这张图特别适合拿来讲：
-
-- 为什么客户不能只盯总资产
-- 为什么即便总资产还在增长，不同用途的钱也不能乱用
-
----
-
-## 11. C6 “各层余额与资金来源”怎么来的
-
-这是最适合顾问解释“账户内部结构”的图。
-
-### 11.1 这张图的核心问题
-
-它回答的是：
-
-- 某一个账户在某一年年末之所以有这么多钱，是由什么构成的
-
-### 11.2 柱子的三部分是什么意思
-
-对每个资金层，柱子会拆成几部分：
-
-1. 上年滚存
-2. 当年投入
-3. 当年收益
-
-这三者共同决定该账户在年末的余额。
-
-如果写成关系式，就是：
-
-\[
-\text{年末余额}
-=
-\text{年初滚存}
-+ \text{当年投入}
-+ \text{当年收益}
-- \text{当年提取}
-\]
-
-### 11.3 阴影区间是什么
-
-阴影区间不是资金来源，而是该账户余额结果范围。
-
-所以这张图同时回答两个层面：
-
-1. 钱是怎么进去的
-2. 在不同市场路径下，最后大概会落在什么范围
-
-### 11.4 为什么这张图比 C3 更细
-
-因为 `C3` 只回答“还剩多少”。
-
-而 `C6` 进一步回答：
-
-- 是靠原来的存量多
-- 还是靠后续结余多
-- 还是主要靠收益长出来
-
-### 11.5 对客户最有价值的用法
-
-顾问可以用它解释：
-
-- 为什么某个账户看起来涨得不快，其实是因为它本来就偏近端、策略更保守
-- 为什么某个账户虽然收益波动更大，但它属于更远期资金，本来就不应该拿近期标准去看
-
----
-
-## 12. 收益区间、居中结果、偏保守结果，到底怎么来的
-
-### 12.1 不是人工写的几个数字
-
-这些区间不是顾问手工填进去的，也不是文案层自己编的。
-
-它们来自很多条可能路径的汇总结果。
-
-### 12.2 结果区间的大致形成方式
-
-流程可以简单理解成：
-
-1. 系统先生成很多条可能的市场路径
-2. 每条路径都把资产和现金流推到测算截止年
-3. 然后看这些路径在每一年、每个账户上大致落在哪里
-
-最后再把这些结果翻译成客户看得懂的说法：
-
-- 偏保守
-- 常见
-- 居中
-- 偏顺利
-
-### 12.3 为什么不同图会复用同一套区间
-
-因为当前系统的很多图，底层都来自同一套路径结果：
-
-1. 总资产年度路径
-2. 各账户年度路径
-
-只是不同图的取法不同：
-
-- 有的图看总资产
-- 有的图看单账户
-- 有的图看居中结果
-- 有的图看区间
-- 有的图看资金来源拆分
-
----
-
-## 13. 富余资金长期收益结论怎么从 QMC 里长出来
-
-摘要中的“富余资金长期收益结论”，不是简单拿平均收益率写一句话。
-
-### 13.1 它先看的是长期持有路径
-
-系统会跟踪富余资金账户从当前年到测算截止年的整段增长过程。
-
-对每条可能路径，先得到：
-
-- 这条路径最终累积增长了多少
-
-再把它换算成“如果摊成每年，大致相当于每年增长多少”。
-
-### 13.2 为什么最后写成年化区间
-
-因为客户更容易理解：
-
-- 每年大致增长多少
-
-而不是：
-
-- 某条路径到最后翻了几倍
-
-### 13.3 为什么摘要里不直接写统计术语
-
-因为对客户来说，真正重要的不是“第几分位”，而是：
-
-- 更保守时大概怎样
-- 中间结果大概怎样
-- 偏顺利时大概怎样
-
-所以摘要层会故意把技术词翻译掉。
-
----
-
-## 14. 顾问怎么解释 QMC，不会显得太技术
-
-推荐顾问这样讲：
-
-“系统不是假设未来只有一条路，而是模拟了很多种可能的市场路径，然后看这些路径大致会把结果带到什么范围。这样得到的不是一个看起来很精确、其实很脆弱的答案，而是一组更适合家庭规划沟通的结果区间。”
-
-如果客户继续追问“那是不是很复杂”：
-
-可以继续说：
-
-“底层方法当然比较复杂，但对您真正重要的不是算法名字，而是它能避免把未来说得过于确定。我们更关心的是：哪些结果比较常见，哪些结果偏保守，哪些结果偏顺利。”
-
----
-
-## 15. 顾问最容易讲错的几点
-
-### 15.1 把区间讲成承诺
-
-错误。
-
-正确讲法：
-
-- 区间是结果范围，不是承诺。
-
-### 15.2 把居中结果讲成最可能唯一结果
-
-错误。
-
-正确讲法：
-
-- 居中结果只是很多可能结果中的中间代表值。
-
-### 15.3 把近端账户和长期账户放在同一个收益标准下评价
-
-错误。
-
-正确讲法：
-
-- 越快要用的钱，越应该优先看可兑现性。
-- 越晚才用的钱，才更适合用长期增长的逻辑看。
-
-### 15.4 把 C5、C6 当作“投资表现排行榜”
-
-错误。
-
-正确讲法：
-
-- 这些图讲的是资金分工、资金来源和结果范围，不是比哪个账户更“会赚钱”。
-
----
-
-## 16. 建议顾问怎么用这些图
-
-最自然的顺序是：
-
-1. 先讲 `事件节点推演`
-
-目的：
-
-- 先确认重大节点站不站得住
-
-2. 再讲 `现金流与资产余额时序（含投资收益）`
-
-目的：
-
-- 让客户理解“保底路径”和“含波动结果范围”的差别
-
-3. 再讲 `C1 / C2`
-
-目的：
-
-- 讲清楚钱应该怎么分层、后续结余怎么走
-
-4. 再讲 `C3 / C4`
-
-目的：
-
-- 让客户接受“不同用途的钱不能混在一起”
-
-5. 最后讲 `C5 / C6`
-
-目的：
-
-- 把“总资产结构”和“单账户内部结构”讲细
-
----
-
-## 17. 一句话总结给顾问
-
-图表和 `QMC` 在这个项目里的作用，不是为了显得模型很复杂，而是为了把“未来存在很多可能，但这些可能并不是完全没有边界”这件事，转成客户能看懂、顾问能解释的家庭资产规划语言。
-
+If chart behavior and older prose ever differ, use the current engine behavior and update the prose afterward.

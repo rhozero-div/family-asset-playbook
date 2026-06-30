@@ -1,14 +1,14 @@
 # FAPM Frontend Demo
 
-这个目录提供一套独立的前端演示壳,用于部署到 Cloudflare Pages。
+This directory contains a standalone frontend demo shell intended for deployment to Cloudflare Pages.
 
-## 目的
+## Purpose
 
-- 对外展示产品结构、问卷分区和剧本阅读方式
-- 不直接改动当前 FastAPI Web 主链
-- 与 Hugging Face Spaces 上的真实 Web 入口形成双站分工
+- Show the product structure, questionnaire sections, and playbook reading flow to the public
+- Avoid changing the main FastAPI questionnaire / playbook chain directly
+- Work alongside the real Hugging Face Spaces app as a separate public-facing demo layer
 
-## 本地启动
+## Local Run
 
 ```bash
 cd frontend
@@ -16,20 +16,25 @@ npm install
 npm run dev
 ```
 
-默认地址:
+Default local address:
 
 ```text
 http://127.0.0.1:3013
 ```
 
-## Cloudflare Pages
+## Recommended Deployment Use
 
-推荐设置:
+- Use this frontend when you want a lightweight public demo
+- Use the FastAPI app when you want the real questionnaire and playbook generation workflow
+
+## Recommended Cloudflare Pages Settings
 
 - Build command: `npm run build`
 - Output directory: `out`
 
-可选环境变量:
+## Optional Environment Variables
 
-- `NEXT_PUBLIC_FAPM_HF_URL`
-- `NEXT_PUBLIC_FAPM_CF_URL`
+- `NEXT_PUBLIC_DEMO_URL`
+  - Public link to the live product demo
+- `NEXT_PUBLIC_PLAYBOOK_DEMO_URL`
+  - Optional link to a specific playbook demo

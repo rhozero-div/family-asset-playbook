@@ -1,162 +1,172 @@
-# 边界声明(Boundaries)
+# Boundaries
 
-**版本:** 0.1.0
-**状态:** draft
-
----
-
-## 1. 概述
-
-本章明确**本方法论不适用**的场景、**必须由专业人士介入**的决策点,以及**质量声明**。
-
-边界声明是方法论的**责任底线**。它的存在不是为了缩小方法论的适用范围,而是为了让方法论在适用的场景下被更安全、更可信地使用。
+**Version:** 0.1.0  
+**Status:** draft
 
 ---
 
-## 2. 不适用场景
+## 1. Overview
 
-下列场景**不属于本方法论的适用范围**。识别为这些场景时,应**拒绝使用本方法论**或**降低对剧本的依赖**:
+This chapter defines:
 
-### 2.1 超高净值复杂架构
+- where the methodology does not apply
+- where specialist intervention is required
+- how quality and responsibility should be framed
 
-**特征:**
-- 总资产 ≥ 1 亿人民币(可调整阈值)
-- 涉及家族信托、离岸架构、多层 SPV
-- 跨境税务复杂(多国税务居民身份)
+These boundaries are not decorative.
+They are part of the methodology’s safety contract.
 
-**为什么不适用的核心是:这类场景的约束建模不是"家庭事件 × 资产大类"能覆盖的。需要专业的家族办公室、信托架构师、跨境税务师联合处理。**
+## 2. Cases Outside Scope
 
-### 2.2 企业主且实业资产占主体
+The methodology is not meant to be the primary decision framework for cases such as:
 
-**特征:**
-- 家庭财富主要来源于企业经营
-- 实业资产(厂房、存货、应收账款)占总财富 ≥ 60%
-- 企业现金流是家庭现金流的主要来源
+### 2.1 Ultra-high-net-worth complex structures
 
-**为什么不适用:** 实业资产与企业经营深度耦合,无法用"固收/权益/保险/另类"四大类刻画。核心命题变成"如何退出/传承企业",而非"如何在四大类间分配"。
+Examples:
 
-### 2.3 未上市股权为主要财富来源
+- highly layered trust or offshore structures
+- multi-jurisdiction tax complexity
+- multi-entity family-office style asset architecture
 
-**特征:**
-- 持有未上市公司股权,且占总财富 ≥ 40%
-- 该股权**流动性极差**(无公开市场)
+### 2.2 Households dominated by operating businesses
 
-**为什么不适用:** 流动性约束极端,且估值高度不确定。本方法论的"流动性储备"假设不成立。
+Examples:
 
-### 2.4 跨境资产配置占主体
+- business assets are the core of household wealth
+- enterprise cash flow is the household’s main economic engine
+- the real planning problem is exit, succession, or enterprise restructuring
 
-**特征:**
-- 海外资产占总财富 ≥ 50%
-- 涉及多个司法管辖区的资产持有
+### 2.3 Households dominated by illiquid private equity stakes
 
-**为什么不适用:** 本方法论的海外资产模块是**辅助性**的(按需启用),不是为"海外为主"设计的。跨境税务、汇率管理、外汇管制等专业问题超出本方法论的边界。
+Examples:
 
-### 2.5 其他应拒绝使用的场景
+- a large share of wealth is tied to non-public equity
+- liquidity is weak and valuation is highly uncertain
 
-- 客户**拒绝披露关键信息**(收入、资产、负债)
-- 客户**明确表示不愿参与决策**(要求"全自动")
-- 客户处于**重大财务危机**(债务重组、破产边缘)
+### 2.4 Cross-border dominant structures
 
----
+Examples:
 
-## 3. 必须由专业人士介入的决策点
+- most wealth sits offshore
+- the core planning problem is cross-border tax, FX, or regulatory complexity
 
-下列决策点**超出本方法论的能力范围**,必须由相应专业人士主导:
+### 2.5 Other cases where the methodology should be refused or downweighted
 
-| 决策点 | 必须的专业人士 | 说明 |
-|---|---|---|
-| 退休年龄与社保/年金衔接 | 退休规划师 + 社保专员 | 涉及社保政策、企业年金、个人养老金账户 |
-| 遗产架构与传承 | 律师 + 税务师 | 遗嘱、信托、跨境遗产规划 |
-| 跨境资产配置 | 跨境税务师 + 外汇管理顾问 | 涉及 CRS、外汇管制、税务居民身份 |
-| 重大健康事件的财务影响 | 精算师 + 医疗顾问 | 长期护理、重疾费用测算 |
-| 创业/职业转换 | 创业顾问 + 税务师 | 期权设计、企业形式选择 |
-| 离婚/分家的财产分割 | 律师 + 调解员 | 婚前协议、财产协议 |
-| 企业股权处置 | 投资银行家 + 律师 | IPO、并购、股权激励 |
-| 重大保险配置(超出储蓄险) | 保险经纪 + 精算师 | 高额寿险、年金险的产品选择 |
+Examples:
 
-**剧本应在 E 段(不适用声明)中显式列举相关决策点,引导客户寻找合适专业人士。**
+- the client refuses to disclose core financial facts
+- the client expects a fully automatic answer with no discussion
+- the household is already in acute financial crisis
 
----
+## 3. Decisions That Require Specialists
 
-## 4. 质量声明
+The methodology does not replace specialists for matters such as:
 
-### 4.1 不构成投资建议
+- retirement policy coordination
+- estate and inheritance structure
+- cross-border tax and residency issues
+- major health-event actuarial planning
+- career-change or entrepreneurship structuring
+- divorce-related property division
+- enterprise equity disposal
+- complex insurance design beyond basic structure review
 
-> **本方法论及其生成的所有剧本均不构成投资建议。**
+The playbook should make these limits visible rather than hiding them.
 
-本方法论输出的是**配置骨架区间**,不是具体的产品推荐、买卖时点、收益承诺。任何将本方法论解读为"投资建议"的做法都是错误的。
+## 4. Quality Statement
 
-### 4.2 数值呈现原则
+### 4.1 Not Investment Advice
 
-- 所有数值以**区间或分布**呈现,不点估计
-- 数值反映**方法论假设**,不反映对未来市场的预测
-- 同一剧本在不同时间生成,数值可能不同(因为方法论假设会随校准更新)
-- **数值不应被引用为"方法论对市场的看法"**
+The methodology and all generated playbooks do **not** constitute investment advice.
 
-### 4.3 顾问责任的边界
+They provide:
 
-顾问使用本方法论时:
-- **有责任**根据客户实际情况调整参数(在 [`03-asset-assumptions.md`](03-asset-assumptions.md) §5 允许范围内)
-- **有责任**在客户档案的 `advisor_assessment.notes` 中记录调整理由
-- **有责任**识别并向客户说明超出方法论范围的情况(§2、§3)
-- **不应承诺**任何具体收益、回撤、税务结果
-- **不应**将本方法论用作规避监管的手段
+- planning structure
+- discussion scaffolding
+- scenario ranges
 
-### 4.4 客户的权利
+They do not provide:
 
-客户在使用本方法论时:
-- **有权**要求顾问解释剧本中的每个数值
-- **有权**拒绝接受任何不符合其风险偏好的建议
-- **有权**随时要求修改事件、调整骨架、改变节奏
-- **不应**因剧本而放弃独立判断
+- product recommendations
+- guaranteed returns
+- trade timing advice
 
----
+### 4.2 Numerical Presentation Rules
 
-## 5. 数值与表述的禁止项
+Numbers in the playbook should be understood as:
 
-为保证方法论的专业性与可信度,以下表述**禁止**出现在客户剧本中:
+- assumption-based
+- scenario-based
+- subject to recalculation
 
-| 禁止表述 | 替代表述 |
-|---|---|
-| "保证收益 X%" | "预期年化收益区间 X-Y%" |
-| "无风险" | "低风险" / "波动率约 X%" |
-| "最优配置" | "参考骨架" / "代表性区间" |
-| "建议买入/卖出 XX 产品" | "建议在固收大类内配置" |
-| "本方法论经过实证检验" | "本方法论基于行业惯例与公开数据" |
-| "跑赢市场" | "与基准指数比较" |
-| "绝对安全" | "相对保守" |
+They should not be treated as:
 
----
+- forecasts guaranteed by the methodology
+- direct market predictions
+- promises about future wealth outcomes
 
-## 6. 监管与合规
+## 5. Advisor Responsibility Boundary
 
-### 6.1 中国大陆
+An advisor using this methodology is responsible for:
 
-- 顾问应持有相应的**证券投资咨询**或**基金销售**资格
-- 涉及保险产品的,应持有**保险经纪/代理**资格
-- 涉及跨境业务的,应遵守**外汇管理**相关规定
-- 不得向客户承诺收益(《关于规范金融机构资产管理业务的指导意见》)
+- collecting planning-grade inputs
+- adjusting assumptions when appropriate
+- documenting meaningful overrides
+- identifying cases outside scope
+- explaining what the playbook does and does not say
 
-### 6.2 跨境
+The advisor should **not**:
 
-- 涉及海外资产的,应了解客户是否为**非居民**或**双重居民**
-- 涉及 CRS(共同申报准则)报告的,应咨询专业税务师
+- promise specific returns
+- imply certainty the model does not have
+- use the playbook as a way to avoid regulated responsibilities
 
-### 6.3 数据隐私
+## 6. Client Rights
 
-- 客户档案应按照**个人信息保护法**要求存储与传输
-- 顾问有责任对客户档案做脱敏处理(详见 [`01-input-schema.md`](01-input-schema.md) §9.3)
-- 跨境数据传输需满足相应的安全评估要求
+Clients should be able to:
 
----
+- ask for explanation of the numbers
+- reject suggestions that do not fit their risk comfort
+- revise milestones and planning rhythm
+- request recalculation
 
-## 7. 与其他章节的关联
+Clients should not be nudged into treating the playbook as unquestionable.
 
-| 本章内容 | 影响 |
-|---|---|
-| 不适用场景 | 应用层应在采集阶段识别并拒绝 |
-| 必须专业介入的决策点 | 剧本 E 段显式列举 |
-| 质量声明与禁止表述 | 应用层剧本生成器的内容过滤 |
-| 监管与合规 | 顾问执业的合规要求 |
+## 7. Prohibited Language
 
-> 关于边界变更的版本管理规则,详见 [`07-versioning.md`](07-versioning.md)。
+The following styles of claim should not appear in client-facing playbooks:
+
+- guaranteed return
+- risk-free
+- absolute safety
+- optimal portfolio
+- buy / sell specific product language
+- market-beating promise language
+
+Preferred alternatives are:
+
+- expected range
+- lower-risk / higher-risk
+- planning skeleton
+- asset-class level discussion
+
+## 8. Compliance and Privacy
+
+Operators should still respect local regulatory and privacy requirements.
+In practice, that includes:
+
+- appropriate financial-activity licensing where applicable
+- avoiding return guarantees
+- handling personal household data carefully
+- treating saved local profiles as sensitive
+
+## 9. Relationship to Other Chapters
+
+- input contract: [`01-input-schema.md`](01-input-schema.md)
+- output contract: [`05-output-structure.md`](05-output-structure.md)
+- versioning: [`07-versioning.md`](07-versioning.md)
+
+## 10. Authority Rule
+
+Any new feature, chart, or summary rule should still be interpreted under this boundary contract.
+If a new behavior appears to cross the line into product advice, the behavior or its wording should be revised.

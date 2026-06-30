@@ -1,126 +1,157 @@
-# 方法论总览(Methodology Overview)
+# Methodology Overview
 
-**版本:** 0.1.0
-**状态:** draft
-
----
-
-## 1. 核心命题
-
-> **家庭资产配置不是求一个静态最优解,而是围绕人生节点生成一份可讨论、可重算、可演化的剧本。**
-
-FAPM 的当前产品形态是:顾问采集客户信息,系统生成一份面对客户的家庭资产规划剧本。剧本不是产品推荐书,也不是收益承诺,而是把家庭节点、现金流压力、资金层次和边界条件组织成一份可阅读的说明文档。
+**Version:** 0.1.0  
+**Status:** draft
 
 ---
 
-## 2. 为什么不是传统求解器
+## 1. Core Proposition
 
-市场上大多数资产配置工具强调给出一个在既定假设下的最优答案。但家庭场景里,假设并不稳定:
+> Household asset planning is not about finding one static optimum. It is about building a playbook that can be discussed, recalculated, and updated around life milestones.
 
-- 购房会重写流动性约束
-- 教育规划会改变资金时点
-- 退休会改变收入与支出结构
-- 健康变化会改变保障与医疗支出
-- 职业变化会改变现金流稳定性
+The current product form of FAPM is:
 
-因此,当前方法论不把输出定义为唯一权重解,而是定义为**一份围绕家庭事件展开的规划剧本**。
+- an advisor collects client information
+- the system generates a household planning playbook for the client
 
----
+That playbook is **not**:
 
-## 3. 当前产品定位
+- a product recommendation memo
+- a promised-return document
+- a fully automated decision engine
 
-当前仓库支持的是一条顾问工作流:
+It is a structured planning document that organizes:
 
-1. 顾问通过结构化问卷采集家庭成员、事件、资产、退休、保险与假设信息
-2. 系统将输入序列化为 YAML
-3. 计算引擎完成节点推演、资金分层和风险提示
-4. 渲染为客户可阅读的剧本
+- life events
+- cash-flow pressure
+- asset buckets
+- execution order
+- explicit boundaries
 
-因此,它既不是纯学术方法论文档,也不是面向客户自助的全自动产品,而是**顾问辅助生成客户剧本**的工作台。
+## 2. Why This Is Not a Traditional Optimizer
 
----
+Most classic asset-allocation tools try to output an “optimal answer” under a fixed set of assumptions.
+In family planning, assumptions do not stay fixed.
 
-## 4. 设计原则
+Examples:
 
-### 4.1 事件驱动
+- a housing plan rewrites liquidity constraints
+- education changes timing needs
+- retirement changes income and spending structure
+- health changes protection and medical pressure
+- career changes alter cash-flow stability
 
-规划以家庭事件为锚点,而不是以单一期望收益率为锚点。
+So the problem is not “what is the mathematically best portfolio today?”
+The problem is closer to:
 
-### 4.2 顾问可解释
+- what needs to be protected first
+- what can stay flexible
+- how funding order changes as life events move
 
-输出必须让顾问能讲清楚:
+## 3. Current Product Shape
 
-- 当前家庭处于什么状态
-- 未来有哪些关键节点
-- 哪些钱要先保留,哪些钱可以承担长期波动
-- 哪些条件变化会触发重算或重规划
+In its current implementation, FAPM works like this:
 
-### 4.3 不构成投资建议
+1. intake through a structured web questionnaire
+2. serialization into YAML
+3. profile loading and projection
+4. event-driven bucket allocation
+5. client-readable playbook generation
 
-剧本可以包含推演、压力、分层和边界,但不应被解释为具体产品推荐、买卖时点或收益承诺。
+This means the methodology is already partly operationalized.
+If older design notes differ from current behavior, current code and current output win.
 
-### 4.4 代码优先解释
+## 4. Core Building Blocks
 
-当前版本中,若早期手册与系统行为不一致,以**现行问卷实际产出的 YAML**和**现行引擎实际渲染的剧本**为准。handbook 的职责是解释当前实现,而不是把旧定义强加给现有产品。
+The methodology currently rests on five building blocks:
 
----
+1. **Household profile**
+   - members, ages, retirement ages, income, spending, assets, liabilities, insurance
+2. **Life events**
+   - major spending milestones such as housing, education, retirement, health, legacy
+3. **Asset assumptions**
+   - return, volatility, correlation, and stage-weight templates
+4. **Mental buckets**
+   - emergency reserve, event buckets, and surplus account
+5. **Playbook rendering**
+   - a client-facing explanation layer over the calculations
 
-## 5. 当前输入与输出
+## 5. What the Current Methodology Optimizes For
 
-### 输入端
+The current methodology is designed to optimize for:
 
-当前主输入端是 Web 问卷,重点采集:
+- readability for client discussion
+- timing clarity for major milestones
+- separation of short-term and long-term money
+- repeatability for recalculation
+- explicit non-advisory boundaries
 
-- 家庭成员与逐人收支
-- 事件节点
-- 现有资产与负债
-- 退休与医疗参数
-- 保险配置
-- 顾问风险偏好
-- 推演假设覆盖
+It is **not** optimized for:
 
-详见 [`01-input-schema.md`](01-input-schema.md)。
+- product selection
+- minute-by-minute execution timing
+- pure mathematical elegance detached from client understanding
 
-### 输出端
+## 6. Current Calculation Convention
 
-当前输出是一份客户剧本,包含:
+The current engine uses these core conventions:
 
-- 元数据与免责声明
-- A. 客户情况概览
-- B. 资产推演
-- C. 资产配置执行方案
-- C3/C4/C5/C6 可视化和心理账户余额补充段
-- 剧本变更记录
+- cash flow is aggregated annually
+- event spending is settled at year end
+- projection charts end at `measurement_end_year`
+- savings insurance can flow into a linked bucket or the surplus account
+- portfolio percentile bands are calculated from full-path portfolio outcomes
 
-详见 [`05-output-structure.md`](05-output-structure.md)。
+These conventions matter because they shape what the playbook means.
 
----
+## 7. Role of the Advisor
 
-## 6. 适用边界
+The advisor is not replaced by the methodology.
+The advisor is responsible for:
 
-当前方法论仍然适用于:
+- collecting accurate inputs
+- identifying cases outside the methodology boundary
+- explaining what the playbook is and is not saying
+- deciding when assumptions should be updated
+- guiding discussion around trade-offs
 
-- 普通中产及中产偏上家庭
-- 未来 5-15 年有明确节点的家庭
-- 愿意和顾问一起讨论规划的客户
+## 8. Role of the Client
 
-以下情况仍应谨慎或拒绝使用:
+The client is not a passive recipient.
+The client should be able to:
 
-- 超高净值复杂架构
-- 企业主且实业资产占主体
-- 未上市股权或跨境资产占主体
-- 客户拒绝披露关键事实
+- see the major milestones clearly
+- understand where timing pressure comes from
+- question the assumptions
+- change event timing or scale
+- request recalculation as life changes
 
-详见 [`06-boundaries.md`](06-boundaries.md)。
+## 9. What the Playbook Is Meant To Feel Like
 
----
+The playbook should feel:
 
-## 7. 后续章节
+- structured rather than abstract
+- practical rather than sales-like
+- discussable rather than final
+- scenario-based rather than predictive
 
-- **[`01-input-schema.md`](01-input-schema.md)**:当前生产链实际使用的输入 schema
-- **[`02-life-events.md`](02-life-events.md)**:事件节点与阶段划分
-- **[`03-asset-assumptions.md`](03-asset-assumptions.md)**:资产假设
-- **[`04-pareto-generation.md`](04-pareto-generation.md)**:骨架与分层背后的规则参考
-- **[`05-output-structure.md`](05-output-structure.md)**:当前剧本输出结构
-- **[`06-boundaries.md`](06-boundaries.md)**:边界与声明
-- **[`07-versioning.md`](07-versioning.md)**:版本管理
+## 10. Relationship to Other Handbook Chapters
+
+- input contract: [`01-input-schema.md`](01-input-schema.md)
+- life-event logic: [`02-life-events.md`](02-life-events.md)
+- asset assumptions: [`03-asset-assumptions.md`](03-asset-assumptions.md)
+- generation logic: [`04-pareto-generation.md`](04-pareto-generation.md)
+- output contract: [`05-output-structure.md`](05-output-structure.md)
+- boundaries: [`06-boundaries.md`](06-boundaries.md)
+- versioning: [`07-versioning.md`](07-versioning.md)
+
+## 11. Authority Rule
+
+If historical notes, older prototypes, or outdated examples conflict with current code behavior, use:
+
+1. the current questionnaire output
+2. the current engine behavior
+3. the current playbook output
+4. the current tests
+
+as the operative truth.
