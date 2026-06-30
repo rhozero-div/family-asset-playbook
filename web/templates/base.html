@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{ lang_attr(lang) }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +10,12 @@
 </head>
 <body>
   <header class="site-header">
-    <h1><a href="/">FAPM 家庭资产配置剧本方法论 / Family Asset Playbook Method</a></h1>
+    <h1><a href="/?lang={{ lang }}">FAPM 家庭资产配置剧本方法论 / Family Asset Playbook Method</a></h1>
     <nav>
-      <a href="/questionnaire">生成剧本 / Start Questionnaire</a>
-      <a href="/">{% if storage_enabled %}客户列表 / Client List{% else %}首页 / Home{% endif %}</a>
+      <a href="/questionnaire?lang={{ lang }}">生成剧本 / Start Questionnaire</a>
+      <a href="/?lang={{ lang }}">{% if storage_enabled %}客户列表 / Client List{% else %}首页 / Home{% endif %}</a>
+      <a href="{{ request.url.path }}?lang=zh"{% if lang == "zh" %} aria-current="page"{% endif %}>中文</a>
+      <a href="{{ request.url.path }}?lang=en"{% if lang == "en" %} aria-current="page"{% endif %}>English</a>
     </nav>
   </header>
 
@@ -24,5 +26,49 @@
   <footer class="site-footer">
     <p><strong>本方法论不构成投资建议 / This methodology is not investment advice.</strong> 所有数值均为占位默认值,实际配置需结合客户具体情况与专业人士意见 / All figures are illustrative and should be reviewed against the client's real situation and professional advice.</p>
   </footer>
+  <script>
+    window.__lang = "{{ lang }}";
+    (function() {
+      function pickLang(text) {
+        if (!text || text.indexOf(' / ') === -1) return text;
+        var idx = text.indexOf(' / ');
+        return window.__lang === 'en' ? text.slice(idx + 3) : text.slice(0, idx);
+      }
+
+      function localizeElementAttrs(el) {
+        ['placeholder', 'title', 'aria-label'].forEach(function(attr) {
+          var value = el.getAttribute && el.getAttribute(attr);
+          if (value && value.indexOf(' / ') !== -1) {
+            el.setAttribute(attr, pickLang(value));
+          }
+        });
+      }
+
+      function shouldSkip(node) {
+        if (!node || !node.parentElement) return true;
+        var tag = node.parentElement.tagName;
+        return tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA';
+      }
+
+      function localizeTree(root) {
+        if (!root) return;
+        root.querySelectorAll('*').forEach(localizeElementAttrs);
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        var current;
+        while ((current = walker.nextNode())) {
+          if (shouldSkip(current)) continue;
+          var raw = current.nodeValue;
+          var picked = pickLang(raw);
+          if (picked !== raw) current.nodeValue = picked;
+        }
+      }
+
+      window.__localizeTree = localizeTree;
+      document.addEventListener('DOMContentLoaded', function() {
+        document.title = pickLang(document.title);
+        localizeTree(document.body);
+      });
+    })();
+  </script>
 </body>
 </html>

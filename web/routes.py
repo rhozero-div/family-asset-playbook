@@ -24,10 +24,21 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROFILES_DIR = PROJECT_ROOT / "profiles"
 
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "web" / "templates"))
-templates.env.globals["asset_version"] = "20260630-02"
+templates.env.globals["asset_version"] = "20260630-03"
 templates.env.globals["storage_enabled"] = server_storage_enabled()
+templates.env.globals["lang_attr"] = lambda lang: "en" if lang == "en" else "zh-CN"
 
 router = APIRouter()
+
+
+def _normalize_lang(value: str | None) -> str:
+    return "en" if value == "en" else "zh"
+
+
+def _request_lang(request: Request, fallback: str | None = None) -> str:
+    if fallback is not None:
+        return _normalize_lang(fallback)
+    return _normalize_lang(request.query_params.get("lang"))
 
 
 def _qi(  # noqa: PLR0913
@@ -40,6 +51,7 @@ def _qi(  # noqa: PLR0913
     client_code: str = "",
     force_prefill: bool = False,
     sample_data_json: str = "{}",
+    lang: str = "zh",
 ) -> dict:
     """问卷模板 context 快捷构造。"""
     return {
@@ -51,6 +63,7 @@ def _qi(  # noqa: PLR0913
         "client_code": client_code,
         "force_prefill": force_prefill,
         "sample_data_json": sample_data_json,
+        "lang": _normalize_lang(lang),
     }
 
 
@@ -61,7 +74,12 @@ async def index(request: Request):
     clients = read_clients() if server_storage_enabled() else []
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "version": "0.1.0", "clients": clients},
+        {
+            "request": request,
+            "version": "0.1.0",
+            "clients": clients,
+            "lang": _request_lang(request),
+        },
     )
 
 
@@ -72,7 +90,11 @@ async def questionnaire_new(request: Request):
     """新建问卷: 空白表单,自动分配客户代码。"""
     return templates.TemplateResponse(
         "questionnaire.html",
-        _qi(request, client_code=next_client_code() if server_storage_enabled() else ""),
+        _qi(
+            request,
+            client_code=next_client_code() if server_storage_enabled() else "",
+            lang=_request_lang(request),
+        ),
     )
 
 
@@ -93,7 +115,7 @@ async def questionnaire_sample_wang(request: Request):
     return templates.TemplateResponse(
         "questionnaire.html",
         _qi(request, client_code=code, force_prefill=True,
-            sample_data_json=json.dumps(data, ensure_ascii=False)),
+            sample_data_json=json.dumps(data, ensure_ascii=False), lang=_request_lang(request)),
     )
 
 
@@ -114,7 +136,7 @@ async def questionnaire_load(request: Request, code: str):
     return templates.TemplateResponse(
         "questionnaire.html",
         _qi(request, client_code=code, force_prefill=True,
-            sample_data_json=json.dumps(data, ensure_ascii=False)),
+            sample_data_json=json.dumps(data, ensure_ascii=False), lang=_request_lang(request)),
     )
 
 
@@ -125,6 +147,7 @@ async def questionnaire_save(
     yaml_file: UploadFile | None = File(default=None),
     current_year: int = Form(default=2026),
     client_code: str = Form(default=""),
+    lang: str = Form(default="zh"),
 ):
     """仅保存问卷,不生成剧本。"""
     import yaml
@@ -136,7 +159,7 @@ async def questionnaire_save(
     if not yaml_text.strip():
         return templates.TemplateResponse(
             "questionnaire.html",
-            _qi(request, error="请先填写表单或粘贴 YAML", client_code=client_code),
+            _qi(request, error="请先填写表单或粘贴 YAML", client_code=client_code, lang=lang),
             status_code=400,
         )
 
@@ -152,6 +175,7 @@ async def questionnaire_save(
                 force_prefill=True,
                 success="演示模式不会把客户信息保存到服务器；如需查看结果，请直接点击“生成剧本”。",
                 sample_data_json=sample_json,
+                lang=lang,
             ),
         )
 
@@ -166,6 +190,7 @@ async def questionnaire_save(
                 yaml_content=yaml_text,
                 force_prefill=True,
                 sample_data_json=sample_json,
+                lang=lang,
             ),
             status_code=400,
         )
@@ -175,7 +200,7 @@ async def questionnaire_save(
         "questionnaire.html",
         _qi(request, client_code=code, force_prefill=True,
             success=f"客户 {code} 已保存",
-            sample_data_json=sample_json),
+            sample_data_json=sample_json, lang=lang),
     )
 
 
@@ -186,6 +211,7 @@ async def questionnaire_generate(
     yaml_file: UploadFile | None = File(default=None),
     current_year: int = Form(default=2026),
     client_code: str = Form(default=""),
+    lang: str = Form(default="zh"),
 ):
     """保存问卷并生成剧本。"""
     yaml_text = yaml_content or ""
@@ -196,18 +222,18 @@ async def questionnaire_generate(
     if not yaml_text.strip():
         return templates.TemplateResponse(
             "questionnaire.html",
-            _qi(request, error="请先填写表单或粘贴 YAML", client_code=client_code),
+            _qi(request, error="请先填写表单或粘贴 YAML", client_code=client_code, lang=lang),
             status_code=400,
         )
     generator = save_yaml_and_generate if server_storage_enabled() else generate_playbook_from_yaml
     if server_storage_enabled():
-        ok, playbook_md, error = generator(yaml_text, current_year, client_code)
+        ok, playbook_md, error = generator(yaml_text, current_year, client_code, lang=lang)
     else:
-        ok, playbook_md, error = generator(yaml_text, current_year)
+        ok, playbook_md, error = generator(yaml_text, current_year, lang=lang)
     if not ok:
         return templates.TemplateResponse(
             "questionnaire.html",
-            _qi(request, error=error, client_code=client_code, yaml_content=yaml_text),
+            _qi(request, error=error, client_code=client_code, yaml_content=yaml_text, lang=lang),
             status_code=400,
         )
 
@@ -228,6 +254,7 @@ async def questionnaire_generate(
             "current_year": current_year,
             "client_code": code,
             "client_name": name,
+            "lang": _normalize_lang(lang),
         },
     )
 
@@ -242,7 +269,8 @@ async def playbook_view(request: Request, code: str):
     if not profile_path.exists():
         raise HTTPException(status_code=404, detail=f"未找到档案: {code}")
     yaml_text = profile_path.read_text(encoding="utf-8")
-    ok, playbook_md, error_msg = save_yaml_and_generate(yaml_text, 2026, code)
+    lang = _request_lang(request)
+    ok, playbook_md, error_msg = save_yaml_and_generate(yaml_text, 2026, code, lang=lang)
     if not ok:
         raise HTTPException(status_code=500, detail=error_msg)
     name = _family_name(yaml_text)
@@ -256,6 +284,7 @@ async def playbook_view(request: Request, code: str):
             "current_year": 2026,
             "client_code": code,
             "client_name": name,
+            "lang": lang,
         },
     )
 

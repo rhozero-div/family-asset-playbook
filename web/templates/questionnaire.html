@@ -15,6 +15,7 @@
 {% endif %}
 
 <form id="questionnaire-form" class="questionnaire-shell" action="/questionnaire/save" method="post" enctype="multipart/form-data">
+<input type="hidden" name="lang" value="{{ lang }}">
 
 <div class="field-row">
   <div class="field narrow">
@@ -446,6 +447,7 @@
 <script>
 window.__forcePrefill = {{ "true" if force_prefill else "false" }};
 window.__clientCode = {{ ('"' + client_code + '"') if client_code else '""' }};
+window.__lang = "{{ lang }}";
 </script>
 <script src="/static/questionnaire.js?v={{ asset_version }}"></script>
 {% endblock %}

@@ -30,8 +30,8 @@
     <tr>
       <td class="code">{{ c.code }}</td>
       <td>{{ c.name }}</td>
-      <td><a href="/questionnaire/load/{{ c.code }}" class="link-action">编辑问卷 / Edit</a></td>
-      <td><a href="/playbook/{{ c.code }}" class="link-action">查看剧本 / View</a></td>
+      <td><a href="/questionnaire/load/{{ c.code }}?lang={{ lang }}" class="link-action">编辑问卷 / Edit</a></td>
+      <td><a href="/playbook/{{ c.code }}?lang={{ lang }}" class="link-action">查看剧本 / View</a></td>
       <form method="post" action="/clients/update" class="inline-form">
         <input type="hidden" name="code" value="{{ c.code }}">
         <td><input type="text" name="tag1" value="{{ c.tags[0] }}" class="tag-input" placeholder="—"></td>
@@ -42,7 +42,7 @@
     </tr>
     {% else %}
     <tr>
-      <td colspan="8" class="empty">暂无客户 / No clients yet。填写 <a href="/questionnaire">新问卷 / new questionnaire</a> 创建第一个客户。</td>
+      <td colspan="8" class="empty">暂无客户 / No clients yet。填写 <a href="/questionnaire?lang={{ lang }}">新问卷 / new questionnaire</a> 创建第一个客户。</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -51,8 +51,8 @@
 
 <h3>快速入口 / Quick Access</h3>
 <ul>
-  <li><a href="/questionnaire">📝 新建问卷 / New Questionnaire</a></li>
-  <li><a href="/questionnaire/sample-wang">📝 已有问卷：王先生示例 / Sample: Mr. Wang</a></li>
+  <li><a href="/questionnaire?lang={{ lang }}">📝 新建问卷 / New Questionnaire</a></li>
+  <li><a href="/questionnaire/sample-wang?lang={{ lang }}">📝 已有问卷：王先生示例 / Sample: Mr. Wang</a></li>
 </ul>
 
 <h3>重要声明 / Important Notice</h3>

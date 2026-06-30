@@ -38,7 +38,7 @@ def receive_yaml_text(yaml_text: str) -> tuple[bool, str, str]:
 
 
 def save_yaml_and_generate(
-    yaml_text: str, current_year: int, client_code: str = "",
+    yaml_text: str, current_year: int, client_code: str = "", lang: str = "zh",
 ) -> tuple[bool, str, str]:
     """保存 YAML 到 profiles/{code}.yaml, 生成剧本, 同步注册表。
 
@@ -66,6 +66,7 @@ def save_yaml_and_generate(
             profile_path=tmp_path,
             handbook_dir=PROJECT_ROOT / "handbook",
             current_year=current_year,
+            lang=lang,
         )
         return True, playbook_md, ""
     except Exception as e:
@@ -75,7 +76,7 @@ def save_yaml_and_generate(
 
 
 def generate_playbook_from_yaml(
-    yaml_text: str, current_year: int,
+    yaml_text: str, current_year: int, lang: str = "zh",
 ) -> tuple[bool, str, str]:
     """不落盘保存客户资料,仅基于输入 YAML 生成剧本。"""
     ok, tmp_or_err, error_msg = receive_yaml_text(yaml_text)
@@ -87,6 +88,7 @@ def generate_playbook_from_yaml(
             profile_path=tmp_path,
             handbook_dir=PROJECT_ROOT / "handbook",
             current_year=current_year,
+            lang=lang,
         )
         return True, playbook_md, ""
     except Exception as e:

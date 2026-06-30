@@ -7,12 +7,12 @@
 {% if client_code %}
 <div class="success-banner">
   客户 {{ client_code }}（{{ client_name }}）已保存 / Client {{ client_code }} ({{ client_name }}) has been saved.
-  <a href="/questionnaire/load/{{ client_code }}" style="margin-left: 0.5rem;">编辑问卷 / Edit</a>
-  <a href="/" style="margin-left: 0.5rem;">← 客户列表 / Client List</a>
+  <a href="/questionnaire/load/{{ client_code }}?lang={{ lang }}" style="margin-left: 0.5rem;">编辑问卷 / Edit</a>
+  <a href="/?lang={{ lang }}" style="margin-left: 0.5rem;">← 客户列表 / Client List</a>
 </div>
 {% endif %}
 <div class="playbook-actions">
-  <a href="/" class="btn-secondary">← 客户列表 / Client List</a>
+  <a href="/?lang={{ lang }}" class="btn-secondary">← 客户列表 / Client List</a>
   <a href="data:text/markdown;charset=utf-8,{{ playbook_md|urlencode }}" download="playbook.md" class="btn-secondary">📥 下载 Markdown / Download Markdown</a>
 </div>
 
@@ -31,6 +31,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  function tp(zh, en) {
+    return window.__lang === 'en' ? en : zh;
+  }
+
   var articleEl = document.getElementById('playbook-article');
   if (articleEl) {
     var slugCounts = {};
@@ -83,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: wrData.labels,
             datasets: [
               {
-                label: '偏保守结果下沿 / Lower conservative range',
+                label: tp('偏保守结果下沿', 'Lower conservative range'),
                 type: 'line',
                 data: wrData.p10,
                 backgroundColor: 'transparent',
@@ -93,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 4,
               },
               {
-                label: '偏乐观结果上沿 / Upper optimistic range',
+                label: tp('偏乐观结果上沿', 'Upper optimistic range'),
                 type: 'line',
                 data: wrData.p90,
                 backgroundColor: 'rgba(34, 197, 94, 0.06)',
@@ -103,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 4,
               },
               {
-                label: '常见结果下沿 / Lower typical range',
+                label: tp('常见结果下沿', 'Lower typical range'),
                 type: 'line',
                 data: wrData.p25,
                 backgroundColor: 'transparent',
@@ -113,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 4,
               },
               {
-                label: '常见结果上沿 / Upper typical range',
+                label: tp('常见结果上沿', 'Upper typical range'),
                 type: 'line',
                 data: wrData.p75,
                 backgroundColor: 'rgba(34, 197, 94, 0.12)',
@@ -123,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 4,
               },
               {
-                label: '居中结果 / Middle outcome',
+                label: tp('居中结果', 'Middle outcome'),
                 type: 'line',
                 data: wrData.p50,
                 borderColor: 'rgb(59, 130, 246)',
@@ -136,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 2,
               },
               {
-                label: '不含投资结果的累计余额（现金流参考线） / Balance without investment results',
+                label: tp('不含投资结果的累计余额（现金流参考线）', 'Balance without investment results'),
                 type: 'line',
                 data: wrData.balance,
                 borderColor: 'rgb(71, 85, 105)',
@@ -150,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 6,
               },
               {
-                label: '现金流入 / Cash inflow',
+                label: tp('现金流入', 'Cash inflow'),
                 data: wrData.inflow,
                 backgroundColor: 'rgba(34, 197, 94, 0.7)',
                 borderColor: 'rgb(34, 197, 94)',
@@ -159,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 1,
               },
               {
-                label: '现金流出 / Cash outflow',
+                label: tp('现金流出', 'Cash outflow'),
                 data: wrData.outflow,
                 backgroundColor: 'rgba(239, 68, 68, 0.7)',
                 borderColor: 'rgb(239, 68, 68)',
@@ -176,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
               x: { ticks: { maxTicksLimit: 20, maxRotation: 45 } },
               y: {
-                title: { display: true, text: '金额 (元) / Amount (RMB)' },
+                title: { display: true, text: tp('金额 (元)', 'Amount (RMB)') },
                 min: wrMin,
                 max: wrMax,
                 ticks: { callback: function(v) { return '¥' + (v / 10000).toFixed(0) + '万'; } }
@@ -217,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: pData.labels,
             datasets: [
               {
-                label: '偏保守结果下沿 / Lower conservative range',
+                label: tp('偏保守结果下沿', 'Lower conservative range'),
                 data: pData.p10,
                 borderColor: 'rgba(239, 68, 68, 0.25)',
                 backgroundColor: 'transparent',
@@ -227,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 2,
               },
               {
-                label: '偏乐观结果上沿 / Upper optimistic range',
+                label: tp('偏乐观结果上沿', 'Upper optimistic range'),
                 data: pData.p90,
                 borderColor: 'rgba(59, 130, 246, 0.25)',
                 backgroundColor: 'rgba(59, 130, 246, 0.06)',
@@ -237,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 2,
               },
               {
-                label: '常见结果下沿 / Lower typical range',
+                label: tp('常见结果下沿', 'Lower typical range'),
                 data: pData.p25,
                 borderColor: 'rgba(239, 68, 68, 0.35)',
                 backgroundColor: 'transparent',
@@ -247,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 2,
               },
               {
-                label: '常见结果上沿 / Upper typical range',
+                label: tp('常见结果上沿', 'Upper typical range'),
                 data: pData.p75,
                 borderColor: 'rgba(59, 130, 246, 0.35)',
                 backgroundColor: 'rgba(59, 130, 246, 0.15)',
@@ -257,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 order: 2,
               },
               {
-                label: '居中结果 / Middle outcome',
+                label: tp('居中结果', 'Middle outcome'),
                 data: pData.p50,
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'transparent',
@@ -277,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
               x: { ticks: { maxTicksLimit: 20, maxRotation: 45 } },
               y: {
-                title: { display: true, text: '金融资产余额 (元) / Financial asset balance (RMB)' },
+                title: { display: true, text: tp('金融资产余额 (元)', 'Financial asset balance (RMB)') },
                 min: pMin,
                 max: pMax,
                 ticks: { callback: function(v) { return '¥' + (v / 10000).toFixed(0) + '万'; } }
@@ -345,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var datasets = [
       // ── 资金来源 stacked bar (在 y 轴上从下到上) ──
       {
-        label: '滚存 (来自上年) / Rolled from prior year',
+        label: tp('滚存 (来自上年)', 'Rolled from prior year'),
         type: 'bar',
         data: bd.starting,
         backgroundColor: 'rgba(59, 130, 246, 0.55)',
@@ -357,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         categoryPercentage: 0.9,
       },
       {
-        label: '今年投入 / This year contribution',
+        label: tp('今年投入', 'This year contribution'),
         type: 'bar',
         data: barPosCash,
         backgroundColor: 'rgba(34, 197, 94, 0.7)',
@@ -369,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
         categoryPercentage: 0.9,
       },
       {
-        label: '今年收益(正) / Positive return',
+        label: tp('今年收益(正)', 'Positive return'),
         type: 'bar',
         data: barPosReturns,
         backgroundColor: 'rgba(234, 179, 8, 0.7)',
@@ -381,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         categoryPercentage: 0.9,
       },
       {
-        label: '提取金额 / Withdrawal',
+        label: tp('提取金额', 'Withdrawal'),
         type: 'bar',
         data: bd.withdrawal_amount,
         backgroundColor: 'rgba(148, 163, 184, 0.7)',
@@ -393,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
         categoryPercentage: 0.9,
       },
       {
-        label: '今年收益(负) / Negative return',
+        label: tp('今年收益(负)', 'Negative return'),
         type: 'bar',
         data: barNegReturns,
         backgroundColor: 'rgba(239, 68, 68, 0.7)',
@@ -405,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
         categoryPercentage: 0.9,
       },
       {
-        label: '今年投入(负) / Negative contribution',
+        label: tp('今年投入(负)', 'Negative contribution'),
         type: 'bar',
         data: barNegCash,
         backgroundColor: 'rgba(156, 163, 175, 0.6)',
@@ -418,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
       // ── 结果区间带 (order > bars=2) ──
       {
-        label: '偏乐观结果上沿 / Upper optimistic range',
+        label: tp('偏乐观结果上沿', 'Upper optimistic range'),
         type: 'line',
         data: bd.p90,
         borderColor: 'transparent',
@@ -429,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
         order: 3,
       },
       {
-        label: '偏保守到偏乐观结果范围 / Conservative-to-optimistic range',
+        label: tp('偏保守到偏乐观结果范围', 'Conservative-to-optimistic range'),
         type: 'line',
         data: bd.p10,
         borderColor: 'transparent',
@@ -440,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
         order: 4,
       },
       {
-        label: '常见结果上沿 / Upper typical range',
+        label: tp('常见结果上沿', 'Upper typical range'),
         type: 'line',
         data: bd.p75,
         borderColor: 'transparent',
@@ -451,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         order: 5,
       },
       {
-        label: '常见结果范围 / Typical range',
+        label: tp('常见结果范围', 'Typical range'),
         type: 'line',
         data: bd.p25,
         borderColor: 'transparent',
@@ -463,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
       },
       // ── 居中结果线 (最上层线) ──
       {
-        label: '居中结果 / Middle outcome',
+        label: tp('居中结果', 'Middle outcome'),
         type: 'line',
         data: bd.p50,
         borderColor: 'rgb(15, 23, 42)',
@@ -480,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 目标水平线
     if (bd.target_amount != null && bd.target_amount > 0) {
       datasets.push({
-        label: '目标 / Target',
+        label: tp('目标', 'Target'),
         type: 'line',
         data: bd.labels.map(function() { return bd.target_amount; }),
         borderColor: 'rgb(239, 68, 68)',
@@ -498,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var wyIdx = bd.labels.indexOf(bd.withdrawal_year);
       if (wyIdx > 0 && wyIdx < bd.labels.length) {
         datasets.push({
-          label: '提取年 / Withdrawal year',
+          label: tp('提取年', 'Withdrawal year'),
           type: 'line',
           data: bd.labels.map(function(_, i) { return i === wyIdx ? bMax : null; }),
           borderColor: 'rgba(239, 68, 68, 0.6)',
@@ -552,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: {
               filter: function(item, chart_data) {
                 // 只显示有意义的项
-                var keep = ['滚存 (来自上年) / Rolled from prior year', '今年投入 / This year contribution', '今年收益(正) / Positive return', '提取金额 / Withdrawal', '今年收益(负) / Negative return', '居中结果 / Middle outcome', '目标 / Target', '提取年 / Withdrawal year'];
+                var keep = [tp('滚存 (来自上年)', 'Rolled from prior year'), tp('今年投入', 'This year contribution'), tp('今年收益(正)', 'Positive return'), tp('提取金额', 'Withdrawal'), tp('今年收益(负)', 'Negative return'), tp('居中结果', 'Middle outcome'), tp('目标', 'Target'), tp('提取年', 'Withdrawal year')];
                 if (keep.indexOf(item.text) >= 0) return true;
                 return false;
               },
@@ -610,14 +614,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // 结果区间带: 偏保守到偏乐观 / 常见结果范围
-        datasets.push({ label: '偏乐观结果上沿 / Upper optimistic range', type: 'line', data: d4.total_p90, borderColor: 'transparent', backgroundColor: 'transparent', borderWidth: 0, pointRadius: 0, fill: false, order: 4 });
-        datasets.push({ label: '偏保守到偏乐观结果范围 / Conservative-to-optimistic range', type: 'line', data: d4.total_p10, borderColor: 'transparent', backgroundColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 0, pointRadius: 0, fill: '-1', order: 4 });
-        datasets.push({ label: '常见结果上沿 / Upper typical range', type: 'line', data: d4.total_p75, borderColor: 'transparent', backgroundColor: 'transparent', borderWidth: 0, pointRadius: 0, fill: false, order: 3 });
-        datasets.push({ label: '常见结果范围 / Typical range', type: 'line', data: d4.total_p25, borderColor: 'transparent', backgroundColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 0, pointRadius: 0, fill: '-1', order: 3 });
+        datasets.push({ label: tp('偏乐观结果上沿', 'Upper optimistic range'), type: 'line', data: d4.total_p90, borderColor: 'transparent', backgroundColor: 'transparent', borderWidth: 0, pointRadius: 0, fill: false, order: 4 });
+        datasets.push({ label: tp('偏保守到偏乐观结果范围', 'Conservative-to-optimistic range'), type: 'line', data: d4.total_p10, borderColor: 'transparent', backgroundColor: 'rgba(239, 68, 68, 0.3)', borderWidth: 0, pointRadius: 0, fill: '-1', order: 4 });
+        datasets.push({ label: tp('常见结果上沿', 'Upper typical range'), type: 'line', data: d4.total_p75, borderColor: 'transparent', backgroundColor: 'transparent', borderWidth: 0, pointRadius: 0, fill: false, order: 3 });
+        datasets.push({ label: tp('常见结果范围', 'Typical range'), type: 'line', data: d4.total_p25, borderColor: 'transparent', backgroundColor: 'rgba(239, 68, 68, 0.5)', borderWidth: 0, pointRadius: 0, fill: '-1', order: 3 });
 
         // 居中结果线 (最上层)
         datasets.push({
-          label: '居中结果总和 / Total middle outcome',
+          label: tp('居中结果总和', 'Total middle outcome'),
           type: 'line',
           data: d4.total_p50,
           borderColor: 'rgb(15, 23, 42)',

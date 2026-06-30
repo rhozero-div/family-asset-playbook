@@ -26,9 +26,16 @@ _DRAWDOWN_CAPS = {
     "aggressive": "40%",
 }
 
+_ACTIVE_LANG = "zh"
+
+
+def _set_lang(lang: str) -> None:
+    global _ACTIVE_LANG
+    _ACTIVE_LANG = "en" if lang == "en" else "zh"
+
 
 def _bi(cn: str, en: str) -> str:
-    return f"{cn} / {en}"
+    return en if _ACTIVE_LANG == "en" else cn
 
 
 def _fmt(x: float) -> str:
@@ -550,46 +557,75 @@ def _headline_conclusion_lines(
     if future_nodes and not negative_nodes:
         last_node = max(future_nodes, key=lambda projection: projection.year)
         lines.append(
-            f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**：按当前测算，已录入的重大支出节点整体可满足；"
-            "The currently recorded major spending milestones can be covered under this projection. "
-            f"截至 {last_node.year} 年，最后一个节点 {last_node.description} 之后仍保留约 {_fmt(last_node.balance_after)} 结余。"
+            (
+                f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**："
+                f"按当前测算，已录入的重大支出节点整体可满足；截至 {last_node.year} 年，"
+                f"最后一个节点 {last_node.description} 之后仍保留约 {_fmt(last_node.balance_after)} 结余。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**: "
+                f"the currently recorded major spending milestones can be covered under this projection; "
+                f"after the last milestone, {last_node.description}, about {_fmt(last_node.balance_after)} remains by {last_node.year}."
+            )
         )
     elif negative_nodes:
         first_shortfall = min(negative_nodes, key=lambda projection: projection.year)
         lines.append(
-            f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**：按当前测算，并非所有重大支出节点都能满足；"
-            "Not every recorded major spending milestone can be covered under the current setup. "
-            f"最早的缺口会出现在 {first_shortfall.year} 年的 {first_shortfall.description}，"
-            f"缺口约 {_fmt(abs(first_shortfall.gap_or_surplus))}。"
+            (
+                f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**："
+                f"按当前测算，并非所有重大支出节点都能满足；最早的缺口会出现在 {first_shortfall.year} 年的 "
+                f"{first_shortfall.description}，缺口约 {_fmt(abs(first_shortfall.gap_or_surplus))}。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**: "
+                f"not every recorded major spending milestone can be covered; the earliest shortfall appears in "
+                f"{first_shortfall.year} for {first_shortfall.description}, with a gap of about {_fmt(abs(first_shortfall.gap_or_surplus))}."
+            )
         )
     else:
         lines.append(
-            f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**：当前档案未录入需要单独测算的大额节点，"
-            "现阶段可先把重点放在持续积累与定期回看上。 No separate large milestone has been recorded yet, "
-            "so the focus can remain on ongoing accumulation and periodic review."
+            (
+                f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**："
+                "当前档案未录入需要单独测算的大额节点，现阶段可先把重点放在持续积累与定期回看上。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**: "
+                "no separate large milestone has been recorded yet, so the focus can remain on ongoing accumulation and periodic review."
+            )
         )
 
     if bucket_result is not None and plan.surplus is not None:
         stats = bucket_result.annualized_return_for_bucket("富余资金")
         if stats is not None:
             lines.append(
-                f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**：如果把富余资金账户从 {stats.start_year} 年持有到 {stats.end_year} 年，"
-                "If the surplus account is held through the full projection window, "
-                f"更居中的结果大致相当于每年增长 {_format_pct(stats.p50)}；"
-                f"若结果偏保守，长期下来大约可能落在每年 {_format_pct(stats.p10)} 到 {_format_pct(stats.p25)} 左右，"
-                f"若结果偏顺利，则大致可能在每年 {_format_pct(stats.p75)} 到 {_format_pct(stats.p90)} 左右。"
+                (
+                    f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
+                    f"如果把富余资金账户从 {stats.start_year} 年持有到 {stats.end_year} 年，更居中的结果大致相当于每年增长 {_format_pct(stats.p50)}；"
+                    f"若结果偏保守，长期下来大约可能落在每年 {_format_pct(stats.p10)} 到 {_format_pct(stats.p25)} 左右，"
+                    f"若结果偏顺利，则大致可能在每年 {_format_pct(stats.p75)} 到 {_format_pct(stats.p90)} 左右。"
+                    if _ACTIVE_LANG == "zh"
+                    else f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**: "
+                    f"if the surplus account is held from {stats.start_year} to {stats.end_year}, the middle outcome is roughly {_format_pct(stats.p50)} per year; "
+                    f"a weaker long-run result may land around {_format_pct(stats.p10)} to {_format_pct(stats.p25)} per year, "
+                    f"while a stronger long-run result may be around {_format_pct(stats.p75)} to {_format_pct(stats.p90)} per year."
+                )
             )
         else:
             lines.append(
-                f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
-                "这笔长期资金的收益区间暂时还未算出，需等收益推演可用后再补充。 "
-                "The return range for this long-term surplus account is not available yet."
+                (
+                    f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
+                    "这笔长期资金的收益区间暂时还未算出，需等收益推演可用后再补充。"
+                    if _ACTIVE_LANG == "zh"
+                    else f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**: "
+                    "the return range for this long-term surplus account is not available yet."
+                )
             )
     else:
         lines.append(
-            f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
-            "当前没有单独划出的富余资金账户，所以现阶段不单独讨论这部分长期资金的增长表现。 "
-            "There is no separate surplus account at the moment, so long-term growth is not discussed separately."
+            (
+                f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
+                "当前没有单独划出的富余资金账户，所以现阶段不单独讨论这部分长期资金的增长表现。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**: "
+                "there is no separate surplus account at the moment, so long-term growth is not discussed separately."
+            )
         )
 
     return lines
@@ -694,7 +730,13 @@ def _render_section_a(profile: ClientProfile) -> str:
                      f"(剩余 {profile.remaining_liability_end_year - profile.current_year} 年)\n\n")
 
     target_liquidity_months = profile.liquidity_reserve_months if profile.liquidity_reserve_months > 0 else 6.0
-    parts.append(f"**{_bi('流动性储备', 'Liquidity reserve')}:** 当前 {profile.liquidity_reserve_months:.0f} 个月(目标 {target_liquidity_months:.0f} 个月) / Current {profile.liquidity_reserve_months:.0f} months (target {target_liquidity_months:.0f} months)\n\n")
+    parts.append(
+        (
+            f"**{_bi('流动性储备', 'Liquidity reserve')}:** 当前 {profile.liquidity_reserve_months:.0f} 个月(目标 {target_liquidity_months:.0f} 个月)\n\n"
+            if _ACTIVE_LANG == "zh"
+            else f"**{_bi('流动性储备', 'Liquidity reserve')}:** current {profile.liquidity_reserve_months:.0f} months (target {target_liquidity_months:.0f} months)\n\n"
+        )
+    )
 
     # A2. 人生节点时间线
     parts.append(f"### A2. {_bi('人生阶段节点', 'Life Milestones')}\n\n")
@@ -775,10 +817,13 @@ def _render_section_b(
     future_cf = _future_cashflow_summary(profile, yearly)
 
     parts = [
-        f"---\n\n## B. {_bi('资产推演', 'Asset Projection')}\n\n"
-        f"> {_bi('本段推演主要回答“未来重大节点能否按时覆盖”。', 'This section focuses on whether future major milestones can be funded on time.')}"
-        f"这里以初始金融资产 {_fmt(profile.total_financial_assets)} 和逐年净现金流序列为基础，"
-        "统一按年末口径累计，并暂不计入投资收益。 End-of-year convention is used throughout, without investment return in this section.\n\n"
+        (
+            f"---\n\n## B. {_bi('资产推演', 'Asset Projection')}\n\n"
+            f"> 本段推演主要回答“未来重大节点能否按时覆盖”。这里以初始金融资产 {_fmt(profile.total_financial_assets)} 和逐年净现金流序列为基础，统一按年末口径累计，并暂不计入投资收益。\n\n"
+            if _ACTIVE_LANG == "zh"
+            else f"---\n\n## B. {_bi('资产推演', 'Asset Projection')}\n\n"
+            f"> This section focuses on whether future major milestones can be funded on time. It starts from {_fmt(profile.total_financial_assets)} of financial assets and the year-by-year net cash-flow path, using an end-of-year convention and excluding investment return in this section.\n\n"
+        )
     ]
     if future_cf:
         parts.append(
@@ -1509,8 +1554,10 @@ def render_playbook(
     yearly_snapshots: tuple[YearlySnapshot, ...] = (),
     return_snapshots: tuple[YearlyReturnSnapshot, ...] = (),
     bucket_result: BucketProjectionResult | None = None,
+    lang: str = "zh",
 ) -> str:
     """渲染完整剧本 Markdown。"""
+    _set_lang(lang)
     chart_end_year = _chart_end_year(profile)
     parts = [
         _render_metadata(profile),

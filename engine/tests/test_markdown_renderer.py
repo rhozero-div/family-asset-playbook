@@ -93,6 +93,22 @@ class TestRenderPlaybook(unittest.TestCase):
         self.assertIn("金融资产", md)
         self.assertIn("退休后预期", md)
         self.assertIn("金额/参数", md)
+        self.assertNotIn("Amount / parameter", md)
+
+    def test_renders_english_mode_headers(self):
+        p, projs, plan, term, yearly, _, _ = _build(include_bucket_result=False)
+        md = render_playbook(
+            profile=p,
+            plan=plan,
+            projections=projs,
+            terminal_steps=term,
+            yearly_snapshots=yearly,
+            bucket_result=None,
+            lang="en",
+        )
+        self.assertIn("Family Asset Playbook", md)
+        self.assertIn("Executive Summary", md)
+        self.assertIn("Client Overview", md)
         self.assertIn("Amount / parameter", md)
 
     def test_renders_event_timeline(self):

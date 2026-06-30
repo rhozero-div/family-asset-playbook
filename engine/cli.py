@@ -55,6 +55,7 @@ def _generate_playbook(
     profile_path: Path,
     handbook_dir: Path,
     current_year: int,
+    lang: str = "zh",
 ) -> str:
     profile = load_profile(profile_path, current_year=current_year)
     assumptions_path = handbook_dir / "03-asset-assumptions.md"
@@ -95,6 +96,7 @@ def _generate_playbook(
         yearly_snapshots=yearly,
         return_snapshots=return_snapshots,
         bucket_result=bucket_result,
+        lang=lang,
     )
 
 
