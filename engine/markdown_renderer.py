@@ -194,60 +194,86 @@ def _summary_state_lines(
     if monthly_surplus < 0:
         _append_unique(
             lines,
-            f"- 当前阶段属于**现金流修复优先**：月度净现金流约 {_fmt(monthly_surplus)}，"
-            "在现金流转正之前，不适合把重点放在长期增值安排上。",
+            (
+                f"- 当前阶段属于**现金流修复优先**：月度净现金流约 {_fmt(monthly_surplus)}，在现金流转正之前，不适合把重点放在长期增值安排上。"
+                if _ACTIVE_LANG == "zh"
+                else f"- The current stage is **cash-flow repair first**: monthly net cash flow is about {_fmt(monthly_surplus)}, so long-term growth planning should not be the priority before cash flow turns positive."
+            ),
         )
     elif next_shortfall is not None:
         _append_unique(
             lines,
-            f"- 当前阶段属于**目标取舍与预算重排优先**：按现有假设，最早会在 {next_shortfall.year} 年的"
-            f"{next_shortfall.description} 出现约 {_fmt(abs(next_shortfall.gap_or_surplus))} 缺口，"
-            "说明仅靠现有预算顺序还不够。",
+            (
+                f"- 当前阶段属于**目标取舍与预算重排优先**：按现有假设，最早会在 {next_shortfall.year} 年的{next_shortfall.description} 出现约 {_fmt(abs(next_shortfall.gap_or_surplus))} 缺口，说明仅靠现有预算顺序还不够。"
+                if _ACTIVE_LANG == "zh"
+                else f"- The current stage is **goal trade-off and budget reordering first**: under the current assumptions, the earliest gap appears in {next_shortfall.year} for {next_shortfall.description}, at about {_fmt(abs(next_shortfall.gap_or_surplus))}, so the current funding order is not enough."
+            ),
         )
     elif next_event is not None and next_event.timing_year - profile.current_year <= 3:
         _append_unique(
             lines,
-            f"- 当前阶段属于**近期节点保障优先**：最近的明确节点是 {next_event.description}"
-            f"（{next_event.timing_year} 年），距离现在仅 {next_event.timing_year - profile.current_year} 年，"
-            "这笔钱的可兑现性比收益弹性更重要。",
+            (
+                f"- 当前阶段属于**近期节点保障优先**：最近的明确节点是 {next_event.description}（{next_event.timing_year} 年），距离现在仅 {next_event.timing_year - profile.current_year} 年，这笔钱的可兑现性比收益弹性更重要。"
+                if _ACTIVE_LANG == "zh"
+                else f"- The current stage is **near-term milestone protection first**: the closest clear milestone is {next_event.description} in {next_event.timing_year}, only {next_event.timing_year - profile.current_year} years away, so availability matters more than return upside."
+            ),
         )
     elif retirement_gap > 0 and retirement_years_left <= 10:
         _append_unique(
             lines,
-            f"- 当前阶段属于**退休准备前置**：按当前口径，退休后月度缺口约 {_fmt(retirement_gap)}，"
-            "而主要收入者已进入退休前 10 年窗口，后续新增积累需要兼顾退休后的现金流承接。",
+            (
+                f"- 当前阶段属于**退休准备前置**：按当前口径，退休后月度缺口约 {_fmt(retirement_gap)}，而主要收入者已进入退休前 10 年窗口，后续新增积累需要兼顾退休后的现金流承接。"
+                if _ACTIVE_LANG == "zh"
+                else f"- The current stage is **retirement preparation brought forward**: the monthly post-retirement gap is about {_fmt(retirement_gap)}, and the main earner is already within the final 10-year pre-retirement window."
+            ),
         )
     elif plan.surplus and plan.surplus.initial_balance > 0:
         _append_unique(
             lines,
-            f"- 当前阶段已进入**分层后可持续增值**：在满足应急层与已识别节点后，仍有"
-            f" {_fmt(plan.surplus.initial_balance)} 初始富余资金可单独按长期资金管理。",
+            (
+                f"- 当前阶段已进入**分层后可持续增值**：在满足应急层与已识别节点后，仍有 {_fmt(plan.surplus.initial_balance)} 初始富余资金可单独按长期资金管理。"
+                if _ACTIVE_LANG == "zh"
+                else f"- The current stage has entered **sustainable long-term growth after bucket separation**: after covering emergency liquidity and identified milestones, there is still {_fmt(plan.surplus.initial_balance)} of starting surplus capital that can be managed as long-term money."
+            ),
         )
     else:
         _append_unique(
             lines,
-            "- 当前阶段属于**中期积累推进**：现有节点可覆盖，但后续仍需要按事件顺序持续把年度结余沉淀到对应账户中。",
+            (
+                "- 当前阶段属于**中期积累推进**：现有节点可覆盖，但后续仍需要按事件顺序持续把年度结余沉淀到对应账户中。"
+                if _ACTIVE_LANG == "zh"
+                else "- The current stage is **mid-term accumulation in progress**: the known milestones can be covered, but annual surplus still needs to keep flowing into the right buckets in milestone order."
+            ),
         )
 
     if emergency_funded:
         _append_unique(
             lines,
-            f"- 按当前金融资产规模，应急层目标 {_fmt(plan.emergency.amount)} 可以被单独划出，"
-            "短期波动不应挤占这部分流动性缓冲。",
+            (
+                f"- 按当前金融资产规模，应急层目标 {_fmt(plan.emergency.amount)} 可以被单独划出，短期波动不应挤占这部分流动性缓冲。"
+                if _ACTIVE_LANG == "zh"
+                else f"- At the current financial asset level, the emergency target of {_fmt(plan.emergency.amount)} can be ring-fenced, and short-term volatility should not consume this liquidity buffer."
+            ),
         )
     else:
         _append_unique(
             lines,
-            f"- 按当前金融资产规模，应急层目标 {_fmt(plan.emergency.amount)} 仍无法被完整划出，"
-            "说明家庭缓冲垫偏薄，任何新增压力都会更快传导到长期资金安排。",
+            (
+                f"- 按当前金融资产规模，应急层目标 {_fmt(plan.emergency.amount)} 仍无法被完整划出，说明家庭缓冲垫偏薄，任何新增压力都会更快传导到长期资金安排。"
+                if _ACTIVE_LANG == "zh"
+                else f"- At the current financial asset level, the emergency target of {_fmt(plan.emergency.amount)} still cannot be fully separated, which means the household buffer is thin and new pressure would spill into long-term funding more quickly."
+            ),
         )
 
     if future_cf and future_cf["negative_years"]:
         neg_years = "、".join(str(year) for year in future_cf["negative_years"][:3])
         _append_unique(
             lines,
-            f"- 常规现金流并不是一条平滑直线：按当前测算，{neg_years} 年等阶段会转负，"
-            "这意味着预算管理需要前置，而不能等到事件临近再处理。",
+            (
+                f"- 常规现金流并不是一条平滑直线：按当前测算，{neg_years} 年等阶段会转负，这意味着预算管理需要前置，而不能等到事件临近再处理。"
+                if _ACTIVE_LANG == "zh"
+                else f"- Regular cash flow is not a smooth line: under the current projection it turns negative in years such as {neg_years}, which means budget action has to happen early rather than waiting until the milestone is close."
+            ),
         )
 
     return lines
@@ -271,31 +297,43 @@ def _summary_action_lines(
     if monthly_surplus < 0:
         _append_unique(
             lines,
-            f"- **先修复现金流本身**：把月度净现金流至少修回到非负。当前约为 {_fmt(monthly_surplus)}，"
-            "如果这一步不先完成，后续任何节点资金计划都会被动被打断。",
+            (
+                f"- **先修复现金流本身**：把月度净现金流至少修回到非负。当前约为 {_fmt(monthly_surplus)}，如果这一步不先完成，后续任何节点资金计划都会被动被打断。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Repair cash flow first**: bring monthly net cash flow back to at least non-negative. It is currently about {_fmt(monthly_surplus)}, and without fixing this first, every later bucket plan becomes fragile."
+            ),
             max_items=3,
         )
 
     if plan.total_investable < plan.emergency.amount:
         _append_unique(
             lines,
-            f"- **先补足应急缓冲**：按当前口径应急层目标为 {_fmt(plan.emergency.amount)}。"
-            "在这部分没有独立站稳之前，不建议把全部金融资产都暴露在长期波动里。",
+            (
+                f"- **先补足应急缓冲**：按当前口径应急层目标为 {_fmt(plan.emergency.amount)}。在这部分没有独立站稳之前，不建议把全部金融资产都暴露在长期波动里。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Rebuild the emergency buffer first**: the emergency target is {_fmt(plan.emergency.amount)}. Before this layer stands on its own, it is not appropriate to expose all financial assets to long-term volatility."
+            ),
             max_items=3,
         )
 
     if next_shortfall is not None:
         _append_unique(
             lines,
-            f"- **优先重排最近会出缺口的目标**：先围绕 {next_shortfall.description}（{next_shortfall.year} 年）"
-            f"消化约 {_fmt(abs(next_shortfall.gap_or_surplus))} 的缺口，再考虑其他远期目标是否按原计划推进。",
+            (
+                f"- **优先重排最近会出缺口的目标**：先围绕 {next_shortfall.description}（{next_shortfall.year} 年）消化约 {_fmt(abs(next_shortfall.gap_or_surplus))} 的缺口，再考虑其他远期目标是否按原计划推进。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Reorder the nearest underfunded goal first**: deal with the roughly {_fmt(abs(next_shortfall.gap_or_surplus))} gap around {next_shortfall.description} in {next_shortfall.year} before deciding whether later goals should keep the original path."
+            ),
             max_items=3,
         )
     elif next_event is not None and next_event.timing_year - profile.current_year <= 3:
         _append_unique(
             lines,
-            f"- **把最近节点资金单独锁定**：{next_event.description}（{next_event.timing_year} 年）属于近端用途，"
-            "在这笔钱达标前，应以可用性和低波动为先，而不是追求更高收益。",
+            (
+                f"- **把最近节点资金单独锁定**：{next_event.description}（{next_event.timing_year} 年）属于近端用途，在这笔钱达标前，应以可用性和低波动为先，而不是追求更高收益。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Lock the nearest milestone bucket separately**: {next_event.description} in {next_event.timing_year} is a near-use bucket, so availability and low volatility matter more than chasing higher returns before it is fully funded."
+            ),
             max_items=3,
         )
 
