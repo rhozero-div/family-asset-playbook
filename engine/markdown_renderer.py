@@ -38,6 +38,39 @@ def _bi(cn: str, en: str) -> str:
     return en if _ACTIVE_LANG == "en" else cn
 
 
+def _years_label(value: int | float) -> str:
+    if _ACTIVE_LANG == "en":
+        return f"{value}y"
+    return f"{value}年"
+
+
+def _months_label(value: int | float) -> str:
+    if _ACTIVE_LANG == "en":
+        return f"{value} months"
+    return f"{value}个月"
+
+
+def _display_bucket_name(name: str) -> str:
+    if _ACTIVE_LANG == "zh":
+        return name
+    if name == "应急储备":
+        return "Emergency Reserve"
+    if name == "富余资金":
+        return "Surplus Account"
+    if name.startswith("重疾准备金"):
+        return name.replace("重疾准备金", "Critical Illness Reserve")
+    stage_map = {
+        "近期-": "Near-term - ",
+        "中期-": "Mid-term - ",
+        "远期-": "Long-term - ",
+        "超远期-": "Ultra-long-term - ",
+    }
+    for prefix, replacement in stage_map.items():
+        if name.startswith(prefix):
+            return replacement + name[len(prefix):]
+    return name
+
+
 def _fmt(x: float) -> str:
     """格式化金额。"""
     return f"¥{x:,.0f}"
@@ -341,25 +374,36 @@ def _summary_action_lines(
         annual_gap = max(next_bucket.amount - next_bucket.initial_balance, 0.0) / (next_bucket.years_from_now + 1)
         _append_unique(
             lines,
-            f"- **按年度进度补最近未达标账户**：当前最先需要继续积累的是 {next_bucket.name}，"
-            f"剩余目标约 {_fmt(max(next_bucket.amount - next_bucket.initial_balance, 0.0))}，"
-            f"可按每年约 {_fmt(annual_gap)} 的节奏检查是否跟上进度。",
+            (
+                f"- **按年度进度补最近未达标账户**：当前最先需要继续积累的是 {_display_bucket_name(next_bucket.name)}，"
+                f"剩余目标约 {_fmt(max(next_bucket.amount - next_bucket.initial_balance, 0.0))}，"
+                f"可按每年约 {_fmt(annual_gap)} 的节奏检查是否跟上进度。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Track the nearest underfunded bucket year by year**: the next bucket that still needs funding is {_display_bucket_name(next_bucket.name)}, "
+                f"with about {_fmt(max(next_bucket.amount - next_bucket.initial_balance, 0.0))} left to build; use roughly {_fmt(annual_gap)} per year as the pace check."
+            ),
             max_items=3,
         )
 
     if plan.surplus and plan.surplus.initial_balance > 0 and len(lines) < 3:
         _append_unique(
             lines,
-            f"- **把长钱与近钱分开**：当前已有 {_fmt(plan.surplus.initial_balance)} 初始富余资金，"
-            "这部分可以单独视作长期账户管理，不要与近 3 年内要动用的节点资金混在一起。",
+            (
+                f"- **把长钱与近钱分开**：当前已有 {_fmt(plan.surplus.initial_balance)} 初始富余资金，这部分可以单独视作长期账户管理，不要与近 3 年内要动用的节点资金混在一起。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Separate long-term money from near-term money**: there is already {_fmt(plan.surplus.initial_balance)} of starting surplus capital, and it should be managed as a distinct long-term account rather than mixed with money needed within the next 3 years."
+            ),
             max_items=3,
         )
 
     if retirement_gap > 0 and len(lines) < 3:
         _append_unique(
             lines,
-            f"- **提前为退休后的现金流断层做准备**：按当前口径退休后月度缺口约 {_fmt(retirement_gap)}，"
-            "后续新增积累不应只盯子女或购房节点，也要预留退休后的承接空间。",
+            (
+                f"- **提前为退休后的现金流断层做准备**：按当前口径退休后月度缺口约 {_fmt(retirement_gap)}，后续新增积累不应只盯子女或购房节点，也要预留退休后的承接空间。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Prepare early for the retirement cash-flow gap**: the current post-retirement monthly gap is about {_fmt(retirement_gap)}, so new accumulation should not focus only on children or housing milestones."
+            ),
             max_items=3,
         )
 
@@ -370,15 +414,22 @@ def _summary_action_lines(
     ):
         _append_unique(
             lines,
-            "- **单独复核责任型保障结构**：当前档案未体现有效定寿，而家庭仍有负债或抚养责任，"
-            "这类风险不应默认由投资账户去被动承接。",
+            (
+                "- **单独复核责任型保障结构**：当前档案未体现有效定寿，而家庭仍有负债或抚养责任，这类风险不应默认由投资账户去被动承接。"
+                if _ACTIVE_LANG == "zh"
+                else "- **Review liability protection separately**: the current file does not show effective term life cover, while the household still carries debt or dependency responsibility, so this risk should not be left to investment assets by default."
+            ),
             max_items=3,
         )
 
     if not lines:
         _append_unique(
             lines,
-            "- **继续按既定分层推进**：现阶段没有看到需要立刻推翻原计划的硬约束，重点是按账户顺序持续执行并定期回看。",
+            (
+                "- **继续按既定分层推进**：现阶段没有看到需要立刻推翻原计划的硬约束，重点是按账户顺序持续执行并定期回看。"
+                if _ACTIVE_LANG == "zh"
+                else "- **Keep executing the current bucket plan**: there is no hard constraint right now that requires overturning the plan, so the focus is steady execution in account order and periodic review."
+            ),
             max_items=3,
         )
 
@@ -398,14 +449,20 @@ def _summary_metric_lines(
 
     _append_unique(
         lines,
-        f"- **月度净结余**：重点关注是否持续低于当前基线 {_fmt(plan.monthly_surplus)}。"
-        "这是一切节点资金计划能否按时推进的总开关。",
+        (
+            f"- **月度净结余**：重点关注是否持续低于当前基线 {_fmt(plan.monthly_surplus)}。这是一切节点资金计划能否按时推进的总开关。"
+            if _ACTIVE_LANG == "zh"
+            else f"- **Monthly surplus**: watch whether it stays below the current baseline of {_fmt(plan.monthly_surplus)}. This is the master switch for whether milestone funding can stay on schedule."
+        ),
         max_items=5,
     )
     _append_unique(
         lines,
-        f"- **应急层是否仍独立保留**：当前应急目标为 {_fmt(plan.emergency.amount)}。"
-        "如果这部分被挪作他用，后续所有长期安排都会更脆弱。",
+        (
+            f"- **应急层是否仍独立保留**：当前应急目标为 {_fmt(plan.emergency.amount)}。如果这部分被挪作他用，后续所有长期安排都会更脆弱。"
+            if _ACTIVE_LANG == "zh"
+            else f"- **Whether the emergency layer remains ring-fenced**: the current emergency target is {_fmt(plan.emergency.amount)}. If this layer gets used elsewhere, every later long-term arrangement becomes more fragile."
+        ),
         max_items=5,
     )
 
@@ -413,46 +470,65 @@ def _summary_metric_lines(
         annual_gap = max(next_bucket.amount - next_bucket.initial_balance, 0.0) / (next_bucket.years_from_now + 1)
         _append_unique(
             lines,
-            f"- **最近未达标目标账户进度**：优先看 {next_bucket.name} 是否至少按每年约 {_fmt(annual_gap)} 的节奏推进，"
-            "不要只看总资产涨跌。",
+            (
+                f"- **最近未达标目标账户进度**：优先看 {_display_bucket_name(next_bucket.name)} 是否至少按每年约 {_fmt(annual_gap)} 的节奏推进，不要只看总资产涨跌。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Progress of the nearest underfunded bucket**: watch whether {_display_bucket_name(next_bucket.name)} is advancing at roughly {_fmt(annual_gap)} per year rather than only watching total assets."
+            ),
             max_items=5,
         )
     elif next_event is not None:
         _append_unique(
             lines,
-            f"- **最近重大节点的可兑现性**：持续检查 {next_event.description}（{next_event.timing_year} 年）对应资金"
-            "是否仍保持独立和可动用。",
+            (
+                f"- **最近重大节点的可兑现性**：持续检查 {next_event.description}（{next_event.timing_year} 年）对应资金是否仍保持独立和可动用。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Fund readiness for the nearest major milestone**: keep checking whether the money for {next_event.description} in {next_event.timing_year} remains separate and available."
+            ),
             max_items=5,
         )
 
     if future_cf:
         _append_unique(
             lines,
-            f"- **最紧年份的常规净现金流**：当前测算里最紧的是 {future_cf['min_year']} 年，"
-            f"常规净现金流约 {_fmt(future_cf['min_net'])}。如果现实偏离这里，剧本需要更早调整。",
+            (
+                f"- **最紧年份的常规净现金流**：当前测算里最紧的是 {future_cf['min_year']} 年，常规净现金流约 {_fmt(future_cf['min_net'])}。如果现实偏离这里，剧本需要更早调整。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Regular net cash flow in the tightest year**: the tightest year in the current projection is {future_cf['min_year']}, with regular net cash flow around {_fmt(future_cf['min_net'])}. If reality diverges here, the playbook should be recalculated earlier."
+            ),
             max_items=5,
         )
 
     if debt_burden_pct > 0:
         _append_unique(
             lines,
-            f"- **负债月供占收入比**：当前约 {debt_burden_pct:.1f}%。"
-            "如果月供上升或收入下降，这个比例会直接压缩节点资金的可执行空间。",
+            (
+                f"- **负债月供占收入比**：当前约 {debt_burden_pct:.1f}%。如果月供上升或收入下降，这个比例会直接压缩节点资金的可执行空间。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Debt-payment share of income**: it is currently about {debt_burden_pct:.1f}%. If payments rise or income falls, this ratio will directly squeeze milestone funding capacity."
+            ),
             max_items=5,
         )
 
     if retirement_gap > 0 and len(lines) < 5:
         _append_unique(
             lines,
-            f"- **退休后月度缺口**：当前口径约 {_fmt(retirement_gap)}。"
-            "若未来养老金、支出或退休年份发生变化，这一项需要优先回看。",
+            (
+                f"- **退休后月度缺口**：当前口径约 {_fmt(retirement_gap)}。若未来养老金、支出或退休年份发生变化，这一项需要优先回看。"
+                if _ACTIVE_LANG == "zh"
+                else f"- **Post-retirement monthly gap**: the current estimate is about {_fmt(retirement_gap)}. If pension, spending, or retirement timing changes, this is one of the first numbers to revisit."
+            ),
             max_items=5,
         )
 
     if plan.surplus and len(lines) < 5:
         _append_unique(
             lines,
-            "- **富余资金是否被提前挪用**：这部分本应用于长期增值，若频繁回流去补近端目标，说明原预算顺序需要重排。",
+            (
+                "- **富余资金是否被提前挪用**：这部分本应用于长期增值，若频繁回流去补近端目标，说明原预算顺序需要重排。"
+                if _ACTIVE_LANG == "zh"
+                else "- **Whether the surplus account is being pulled forward too early**: this account is meant for long-term growth, and frequent backflow into near-term needs suggests the original budget order should be rearranged."
+            ),
             max_items=5,
         )
 
@@ -489,45 +565,60 @@ def _summary_insurance_lines(
     if medical_gap or ci_gap or life_gap:
         missing_items: list[str] = []
         if medical_gap:
-            missing_items.append("医疗保障")
+            missing_items.append(_bi("医疗保障", "medical coverage"))
         if ci_gap:
-            missing_items.append("重疾保障")
+            missing_items.append(_bi("重疾保障", "critical illness coverage"))
         if life_gap:
-            missing_items.append("定期寿险")
-        missing_text = "、".join(missing_items)
+            missing_items.append(_bi("定期寿险", "term life coverage"))
+        missing_text = "、".join(missing_items) if _ACTIVE_LANG == "zh" else ", ".join(missing_items)
         if premium_pressure:
             _append_unique(
                 lines,
-                f"- 当前保障更值得先补的是**{missing_text}**，但不建议一次性全面铺开。"
-                "更合适的做法是先围绕关键收入成员补基础保障，再控制新增保费，避免挤压近期重大节点和日常现金流。",
+                (
+                    f"- 当前保障更值得先补的是**{missing_text}**，但不建议一次性全面铺开。更合适的做法是先围绕关键收入成员补基础保障，再控制新增保费，避免挤压近期重大节点和日常现金流。"
+                    if _ACTIVE_LANG == "zh"
+                    else f"- The most important protection gaps to fill first are **{missing_text}**, but it is not advisable to add everything at once. Start with core coverage for key earners and control new premium burden so near-term milestones and daily cash flow are not squeezed."
+                ),
                 max_items=2,
             )
         else:
             _append_unique(
                 lines,
-                f"- 当前保障存在明显结构缺口，建议优先复核关键收入成员的**{missing_text}**是否齐全。"
-                "顺序上先补基础保障，再考虑长期锁定型保险安排会更稳妥。",
+                (
+                    f"- 当前保障存在明显结构缺口，建议优先复核关键收入成员的**{missing_text}**是否齐全。顺序上先补基础保障，再考虑长期锁定型保险安排会更稳妥。"
+                    if _ACTIVE_LANG == "zh"
+                    else f"- The current protection structure has visible gaps. Review whether key earners already have complete **{missing_text}** first, and fill basic coverage before considering long-duration locked insurance arrangements."
+                ),
                 max_items=2,
             )
     elif plan.insurance.premium_burden_pct >= 10:
         _append_unique(
             lines,
-            f"- 现有基础保障已有一定覆盖，但当前保费负担约占月收入的 {plan.insurance.premium_burden_pct:.1f}%。"
-            "现阶段更重要的是确认保费压力是否能长期承受，而不是继续叠加新的长期保单。",
+            (
+                f"- 现有基础保障已有一定覆盖，但当前保费负担约占月收入的 {plan.insurance.premium_burden_pct:.1f}%。现阶段更重要的是确认保费压力是否能长期承受，而不是继续叠加新的长期保单。"
+                if _ACTIVE_LANG == "zh"
+                else f"- Existing basic coverage already has some foundation, but premiums are about {plan.insurance.premium_burden_pct:.1f}% of monthly income. The more important question now is whether that premium load is sustainable over time."
+            ),
             max_items=2,
         )
     elif retirement_gap > 0 and profile.insurance_medical_covered:
         _append_unique(
             lines,
-            "- 现有保障结构没有看到明显短板，后续重点可放在定期回看退休后的医疗与自付压力是否仍在可承受范围内，"
-            "而不必急着做复杂加保。",
+            (
+                "- 现有保障结构没有看到明显短板，后续重点可放在定期回看退休后的医疗与自付压力是否仍在可承受范围内，而不必急着做复杂加保。"
+                if _ACTIVE_LANG == "zh"
+                else "- No major protection shortfall is obvious right now. The next focus can stay on periodic review of post-retirement healthcare and out-of-pocket pressure rather than rushing into complex additional cover."
+            ),
             max_items=2,
         )
     else:
         _append_unique(
             lines,
-            "- 当前保障更适合做定期复核，而不是明显加码。重点是确认关键收入成员的医疗、重疾和寿险责任"
-            "能否覆盖家庭责任期，而不是把保障配置做得过于复杂。",
+            (
+                "- 当前保障更适合做定期复核，而不是明显加码。重点是确认关键收入成员的医疗、重疾和寿险责任能否覆盖家庭责任期，而不是把保障配置做得过于复杂。"
+                if _ACTIVE_LANG == "zh"
+                else "- The current protection setup is better suited to periodic review than visible expansion. The key question is whether medical, critical illness, and life cover for key earners still match the household responsibility period."
+            ),
             max_items=2,
         )
 
@@ -546,37 +637,55 @@ def _summary_recalc_lines(
 
     _append_unique(
         lines,
-        f"- 家庭收入若出现明显变化，特别是年收入下降约 20% 以上"
-        f"（折合月收入变动约 {_fmt(income_change)} 量级）时，建议重算。",
+        (
+            f"- 家庭收入若出现明显变化，特别是年收入下降约 20% 以上（折合月收入变动约 {_fmt(income_change)} 量级）时，建议重算。"
+            if _ACTIVE_LANG == "zh"
+            else f"- Recalculate if household income changes materially, especially if annual income falls by around 20% or more (roughly a monthly change of {_fmt(income_change)})."
+        ),
         max_items=5,
     )
     _append_unique(
         lines,
-        "- 新增、提前、取消或放大任何重大支出节点时，建议重算；这会直接改变资金分层顺序。",
+        _bi(
+            "- 新增、提前、取消或放大任何重大支出节点时，建议重算；这会直接改变资金分层顺序。",
+            "- Recalculate when any major spending milestone is added, brought forward, cancelled, or enlarged; that directly changes bucket order.",
+        ),
         max_items=5,
     )
     _append_unique(
         lines,
-        f"- 常规支出或负债月供若明显抬升，特别是月度总支出变化约 15% 以上"
-        f"（约 {_fmt(expense_change)} 量级）时，建议重算。",
+        (
+            f"- 常规支出或负债月供若明显抬升，特别是月度总支出变化约 15% 以上（约 {_fmt(expense_change)} 量级）时，建议重算。"
+            if _ACTIVE_LANG == "zh"
+            else f"- Recalculate if regular spending or monthly debt payments rise materially, especially if total monthly outflow changes by roughly 15% or more (about {_fmt(expense_change)})."
+        ),
         max_items=5,
     )
     if retirement_gap > 0 or _next_future_event(profile) is not None:
         _append_unique(
             lines,
-            "- 退休年份、子女教育路径、购房安排等人生节点发生变化时，建议重算；这类变化通常比市场波动更能改变剧本结论。",
+            _bi(
+                "- 退休年份、子女教育路径、购房安排等人生节点发生变化时，建议重算；这类变化通常比市场波动更能改变剧本结论。",
+                "- Recalculate if retirement timing, children’s education path, housing plans, or other life milestones change; these often matter more than market moves.",
+            ),
             max_items=5,
         )
     if future_cf and future_cf["negative_years"]:
         _append_unique(
             lines,
-            "- 若现实中已经出现长期动用应急层、提前挪用富余资金、或连续几年净结余低于预期，也应视作重算信号。",
+            _bi(
+                "- 若现实中已经出现长期动用应急层、提前挪用富余资金、或连续几年净结余低于预期，也应视作重算信号。",
+                "- Treat prolonged use of the emergency layer, early use of the surplus account, or several years of weaker-than-expected surplus as recalculation signals as well.",
+            ),
             max_items=5,
         )
     else:
         _append_unique(
             lines,
-            "- 若金融资产出现大额进出、或家庭保障结构发生明显变化，也应回到问卷重算一次，避免沿用旧假设。",
+            _bi(
+                "- 若金融资产出现大额进出、或家庭保障结构发生明显变化，也应回到问卷重算一次，避免沿用旧假设。",
+                "- Also return to the questionnaire and recalculate when large financial asset inflows or outflows occur, or when the protection structure changes materially.",
+            ),
             max_items=5,
         )
     return lines[:5]
@@ -733,7 +842,11 @@ def _render_section_a(profile: ClientProfile) -> str:
         if ret_income > 0:
             income_items = retirement_rollup["income_items"]
             income_desc = "；".join(f"{name} {_fmt(value)}" for name, value in income_items[:4]) if income_items else (
-                f"养老金 {_fmt(profile.retirement_monthly_pension)} + 年金 {_fmt(profile.retirement_monthly_annuity)}"
+                (
+                    f"养老金 {_fmt(profile.retirement_monthly_pension)} + 年金 {_fmt(profile.retirement_monthly_annuity)}"
+                    if _ACTIVE_LANG == "zh"
+                    else f"pension {_fmt(profile.retirement_monthly_pension)} + annuity {_fmt(profile.retirement_monthly_annuity)}"
+                )
             )
             parts.append(
                 f"| {_bi('退休月收入', 'Retirement monthly income')} | {_fmt(ret_income)} | "
@@ -741,7 +854,7 @@ def _render_section_a(profile: ClientProfile) -> str:
             )
         if ret_expense > 0:
             expense_items = retirement_rollup["expense_items"]
-            expense_desc = "；".join(f"{name} {_fmt(value)}" for name, value in expense_items[:4]) if expense_items else "退休后月度生活支出口径"
+            expense_desc = "；".join(f"{name} {_fmt(value)}" for name, value in expense_items[:4]) if expense_items else _bi("退休后月度生活支出口径", "retirement monthly living spending basis")
             parts.append(f"| {_bi('退休月支出', 'Retirement monthly spending')} | {_fmt(ret_expense)} | {expense_desc} |\n")
         hc = retirement_rollup["first_year_healthcare_selfpay_total"] or profile.healthcare_starting_annual
         if hc > 0:
@@ -751,12 +864,12 @@ def _render_section_a(profile: ClientProfile) -> str:
             display_growth = max(growth_rates) if growth_rates else profile.healthcare_growth_rate
             if display_growth > 0:
                 pct = round(display_growth * 100, 1)
-                growth_desc = f"年复利增长 {pct}%"
+                growth_desc = _bi(f"年复利增长 {pct}%", f"compound annual growth {pct}%")
             cap_desc = _fmt(sum(annual_caps)) if annual_caps else "—"
             gross_hc = sum(m.healthcare_starting_annual for m in profile.members if m.healthcare_starting_annual > 0) or profile.healthcare_starting_annual
             parts.append(f"| {_bi('退休首年医疗年支出(毛额)', 'Gross annual healthcare spending in first retirement year')} | {_fmt(gross_hc)} | {growth_desc}；{_bi('年度封顶', 'annual cap')} {cap_desc} |\n")
             healthcare_items = retirement_rollup["healthcare_items"]
-            hc_desc = "；".join(f"{name} {_fmt(value)}" for name, value in healthcare_items[:4]) if healthcare_items else "按退休首年医疗支出测算"
+            hc_desc = "；".join(f"{name} {_fmt(value)}" for name, value in healthcare_items[:4]) if healthcare_items else _bi("按退休首年医疗支出测算", "estimated from first-year retirement healthcare spending")
             parts.append(
                 f"| {_bi('退休首年医疗自付', 'Out-of-pocket healthcare in first retirement year')} | {_fmt(hc)} | {hc_desc} |\n"
             )
@@ -764,8 +877,15 @@ def _render_section_a(profile: ClientProfile) -> str:
 
     # 负债还清时间
     if profile.monthly_liabilities > 0 and profile.remaining_liability_end_year > profile.current_year:
-        parts.append(f"**{_bi('贷款还清', 'Debt fully repaid')}:** {profile.remaining_liability_end_year} 年"
-                     f"(剩余 {profile.remaining_liability_end_year - profile.current_year} 年)\n\n")
+        parts.append(
+            (
+                f"**{_bi('贷款还清', 'Debt fully repaid')}:** {profile.remaining_liability_end_year} 年"
+                f"(剩余 {profile.remaining_liability_end_year - profile.current_year} 年)\n\n"
+                if _ACTIVE_LANG == "zh"
+                else f"**{_bi('贷款还清', 'Debt fully repaid')}:** {profile.remaining_liability_end_year} "
+                f"({profile.remaining_liability_end_year - profile.current_year} years remaining)\n\n"
+            )
+        )
 
     target_liquidity_months = profile.liquidity_reserve_months if profile.liquidity_reserve_months > 0 else 6.0
     parts.append(
@@ -786,7 +906,7 @@ def _render_section_a(profile: ClientProfile) -> str:
         years = evt.timing_year - profile.current_year
         amount = _fmt(evt.estimated_amount) if evt.estimated_amount else "—"
         parts.append(
-            f"| {evt.timing_year} | {years}年 | {evt.description} | {amount} |\n"
+            f"| {evt.timing_year} | {_years_label(years)} | {evt.description} | {amount} |\n"
         )
     parts.append("\n")
 
@@ -865,8 +985,11 @@ def _render_section_b(
     ]
     if future_cf:
         parts.append(
-            f"> 按当前档案，{future_cf['start_year']}-{future_cf['end_year']} 年常规净现金流"
-            f"年均约 {_fmt(future_cf['avg_net'])}，并会随成员起薪、退休切换与退休后支出口径动态变化。\n\n"
+            (
+                f"> 按当前档案，{future_cf['start_year']}-{future_cf['end_year']} 年常规净现金流年均约 {_fmt(future_cf['avg_net'])}，并会随成员起薪、退休切换与退休后支出口径动态变化。\n\n"
+                if _ACTIVE_LANG == "zh"
+                else f"> Based on the current file, average regular net cash flow from {future_cf['start_year']} to {future_cf['end_year']} is about {_fmt(future_cf['avg_net'])}, and it changes with income start dates, retirement transitions, and post-retirement spending rules.\n\n"
+            )
         )
 
     chart_end_year = _chart_end_year(profile)
@@ -937,13 +1060,17 @@ def _render_section_b(
                 if total_return < 0
             ]
             note = (
-                "> 这张图展示的是家庭总资产路径。总资产上升，可能同时来自当年结余和投资结果；"
-                "其中某些年份，投资结果本身也可能为负。\n\n"
+                "> 这张图展示的是家庭总资产路径。总资产上升，可能同时来自当年结余和投资结果；其中某些年份，投资结果本身也可能为负。\n\n"
+                if _ACTIVE_LANG == "zh"
+                else "> This chart shows the household total-asset path. Asset growth may come from both annual surplus and investment results, and investment results themselves can be negative in some years.\n\n"
             )
             if negative_return_years:
                 note += (
-                    f"> 按居中情景口径，投资结果为负的年份包括："
-                    f"{'、'.join(negative_return_years)}。\n\n"
+                    (
+                        f"> 按居中情景口径，投资结果为负的年份包括：{'、'.join(negative_return_years)}。\n\n"
+                        if _ACTIVE_LANG == "zh"
+                        else f"> Under the middle outcome, years with negative investment results include: {', '.join(negative_return_years)}.\n\n"
+                    )
                 )
             cashflow_with_return_data = json.dumps({
                 "labels": ret_labels,
@@ -979,13 +1106,20 @@ def _render_section_b(
                 "p90": [s.p90 for s in return_snapshots_truncated],
             })
             parts.append(
-                '<div class="chart-section">\n'
-                f'  <h3>家庭总资产路径（含现金流与投资结果，展示至 {chart_end_year} 年）</h3>\n'
-                '  <div class="chart-container">\n'
-                '    <canvas id="cashflowWithReturnChart"></canvas>\n'
-                '  </div>\n'
-                '</div>\n'
-                '> 这张图展示的是家庭总资产路径。总资产上升，可能同时来自当年结余和投资结果；其中某些年份，投资结果本身也可能为负。\n\n'
+                (
+                    '<div class="chart-section">\n'
+                    f'  <h3>{_bi(f"家庭总资产路径（含现金流与投资结果，展示至 {chart_end_year} 年）", f"Total household asset path (cash flow and investment results included, shown through {chart_end_year})")}</h3>\n'
+                    '  <div class="chart-container">\n'
+                    '    <canvas id="cashflowWithReturnChart"></canvas>\n'
+                    '  </div>\n'
+                    '</div>\n'
+                )
+                + (
+                    '> 这张图展示的是家庭总资产路径。总资产上升，可能同时来自当年结余和投资结果；其中某些年份，投资结果本身也可能为负。\n\n'
+                    if _ACTIVE_LANG == "zh"
+                    else '> This chart shows the household total-asset path. Asset growth may come from both annual surplus and investment results, and investment results themselves can be negative in some years.\n\n'
+                )
+                +
                 f'<script id="cashflow-with-return-data" type="application/json">{cashflow_with_return_data}</script>\n\n'
             )
 
@@ -993,9 +1127,13 @@ def _render_section_b(
     parts.append(f"| {_bi('节点', 'Milestone')} | {_bi('年份', 'Year')} | {_bi('距今', 'Years from now')} | {_bi('到达时累积资产', 'Assets available at milestone')} | {_bi('所需支出', 'Required spending')} | {_bi('支出后余额', 'Balance after spending')} | {_bi('状态', 'Status')} |\n")
     parts.append("|---|---|---|---|---|---|---|\n")
     for proj in projections:
-        status = f"**盈余 {_fmt(proj.gap_or_surplus)}**" if proj.gap_or_surplus >= 0 else f"**缺口 {_fmt(abs(proj.gap_or_surplus))}**"
+        status = (
+            f"**盈余 {_fmt(proj.gap_or_surplus)}**" if proj.gap_or_surplus >= 0 else f"**缺口 {_fmt(abs(proj.gap_or_surplus))}**"
+        ) if _ACTIVE_LANG == "zh" else (
+            f"**Surplus {_fmt(proj.gap_or_surplus)}**" if proj.gap_or_surplus >= 0 else f"**Gap {_fmt(abs(proj.gap_or_surplus))}**"
+        )
         parts.append(
-            f"| {proj.description} | {proj.year} | {proj.years_from_now}年 "
+            f"| {proj.description} | {proj.year} | {_years_label(proj.years_from_now)} "
             f"| {_fmt(proj.accumulated_savings)} | {_fmt(proj.event_cost)} "
             f"| {_fmt(proj.balance_after)} | {status} |\n"
         )
@@ -1027,14 +1165,14 @@ def _stage_symbol(years_left: int | None) -> str:
 
 def _stage_label(years_left: int | None) -> str:
     if years_left is None or years_left <= 0:
-        return "到期"
+        return _bi("到期", "Matured")
     if years_left <= 3:
-        return "近期"
+        return _bi("近期", "Near-term")
     if years_left <= 7:
-        return "中期"
+        return _bi("中期", "Mid-term")
     if years_left <= 10:
-        return "远期"
-    return "超远期"
+        return _bi("远期", "Long-term")
+    return _bi("超远期", "Ultra-long-term")
 
 
 def _stage_color(years_left: int | None) -> str:
@@ -1055,16 +1193,26 @@ def _stage_badge(symbol: str, label: str, years_left: int | None) -> str:
 
 
 def _stage_legend_html(*, include_expired_note: bool = False) -> str:
-    legend = (
-        '<span class="stage-legend">'
-        '<span class="stage-chip stage-chip-near">★</span>=近期(≤3年) '
-        '<span class="stage-chip stage-chip-mid">●</span>=中期(3-7年) '
-        '<span class="stage-chip stage-chip-long">■</span>=远期(7-10年) '
-        '<span class="stage-chip stage-chip-ultra">▲</span>=超远期(>10年)'
-        '</span>'
-    )
+    if _ACTIVE_LANG == "en":
+        legend = (
+            '<span class="stage-legend">'
+            '<span class="stage-chip stage-chip-near">★</span>=Near-term (≤3y) '
+            '<span class="stage-chip stage-chip-mid">●</span>=Mid-term (3-7y) '
+            '<span class="stage-chip stage-chip-long">■</span>=Long-term (7-10y) '
+            '<span class="stage-chip stage-chip-ultra">▲</span>=Ultra-long-term (>10y)'
+            '</span>'
+        )
+    else:
+        legend = (
+            '<span class="stage-legend">'
+            '<span class="stage-chip stage-chip-near">★</span>=近期(≤3年) '
+            '<span class="stage-chip stage-chip-mid">●</span>=中期(3-7年) '
+            '<span class="stage-chip stage-chip-long">■</span>=远期(7-10年) '
+            '<span class="stage-chip stage-chip-ultra">▲</span>=超远期(>10年)'
+            '</span>'
+        )
     if include_expired_note:
-        legend += " 无符号=已到期。"
+        legend += _bi(" 无符号=已到期。", " No symbol = matured.")
     return legend
 
 
@@ -1080,11 +1228,14 @@ def _iter_all_buckets(plan: AllocationPlan):
 def _bucket_purpose(b: BucketAllocation) -> str:
     """返回 bucket 的中文用途描述。"""
     if b.name == "应急储备":
-        return "流动性保障"
+        return _bi("流动性保障", "Liquidity protection")
     if b.name == "富余资金":
-        return "长期灵活投资"
+        return _bi("长期灵活投资", "Long-term flexible investment")
     if b.withdrawal_year:
-        return f"对应 {b.withdrawal_year} 年目标支出"
+        return _bi(
+            f"对应 {b.withdrawal_year} 年目标支出",
+            f"For the target spending in {b.withdrawal_year}",
+        )
     return b.name
 
 
@@ -1104,10 +1255,14 @@ def _render_section_c(
     parts.append(f"### C1. {_bi('初始存量资金分配（立即执行）', 'Initial Capital Allocation (Do Now)')}\n\n")
 
     if total <= 0:
-        parts.append("> 无可投资金融资产，跳过本节。\n\n")
+        parts.append(_bi("> 无可投资金融资产，跳过本节。\n\n", "> No investable financial assets are available, so this section is skipped.\n\n"))
     else:
         parts.append(
-            f"你现有的 **{_fmt(total)}** 金融资产，可先按下表完成一次初始分层；核心目的是先把不同用途的资金分别放到合适的位置。\n\n"
+            (
+                f"你现有的 **{_fmt(total)}** 金融资产，可先按下表完成一次初始分层；核心目的是先把不同用途的资金分别放到合适的位置。\n\n"
+                if _ACTIVE_LANG == "zh"
+                else f"Your current **{_fmt(total)}** of financial assets can first be separated according to the table below. The core goal is to place money with different purposes into the right buckets.\n\n"
+            )
         )
 
         parts.append(f"| {_bi('资金层', 'Bucket')} | {_bi('用途', 'Purpose')} | {_bi('一次性划拨', 'Initial allocation')} | {_bi('占存量比', 'Share of starting assets')} | {_bi('投资阶段', 'Investment stage')} |\n")
@@ -1119,10 +1274,10 @@ def _render_section_c(
             pct_str = f"{b.initial_balance/total*100:.1f}%" if b.initial_balance > 0 else "0.0%"
             # 确定投资阶段
             if b.name == "应急储备":
-                sym, label = "★", "近期"
+                sym, label = "★", _stage_label(1)
                 years_left = 1
             elif b.name.startswith("重疾准备金"):
-                sym, label = "★", "近期"
+                sym, label = "★", _stage_label(1)
                 years_left = 1
             elif b.name == "富余资金":
                 years_left = (b.withdrawal_year - current_year) if b.withdrawal_year else 15
@@ -1134,12 +1289,12 @@ def _render_section_c(
                 label = _stage_label(years_left)
             stage_html = _stage_badge(sym, label, years_left)
             parts.append(
-                f"| {b.name} | {_bucket_purpose(b)} "
+                f"| {_display_bucket_name(b.name)} | {_bucket_purpose(b)} "
                 f"| {_fmt(b.initial_balance)} | {pct_str} "
                 f"| {stage_html} |\n"
             )
         parts.append(
-            f"| **合计** | — | **{_fmt(total)}** | **100%** | — |\n"
+            f"| **{_bi('合计', 'Total')}** | — | **{_fmt(total)}** | **100%** | — |\n"
         )
         parts.append("\n")
 
@@ -1151,26 +1306,32 @@ def _render_section_c(
     parts.append(f"### C2. {_bi('年度净结余分配（动态口径，按年预算，按月执行）', 'Annual Net Surplus Allocation (annual budget, monthly execution)')}\n\n")
 
     if monthly <= 0 and not future_cf:
-        parts.append("> 当前缺少可用于分配的净结余信息。\n\n")
+        parts.append(_bi("> 当前缺少可用于分配的净结余信息。\n\n", "> There is currently no net-surplus information available for allocation.\n\n"))
     else:
         ci_monthly = plan.ci_reserve.monthly_contribution if plan.ci_reserve else 0
 
         if monthly <= 0:
             parts.append(
-                "你当前截面的月度结余并不宽松，但未来年度预算仍应以逐年净现金流序列来判断，"
-                "而不是只看当前一个时点。\n\n"
+                _bi(
+                    "你当前截面的月度结余并不宽松，但未来年度预算仍应以逐年净现金流序列来判断，而不是只看当前一个时点。\n\n",
+                    "The current monthly surplus at this point is not wide, but future annual budgeting should still be judged against the year-by-year net cash-flow path rather than one single point in time.\n\n",
+                )
             )
         else:
             parts.append(
-                f"你当前每月约有 **{_fmt(monthly)}** 净结余，"
-                f"对应当前年度起点预算约 **{_fmt(monthly * 12)}**。"
-                "但后续执行不应把它视作固定值，下表反映的是年度优先顺序，日常执行时再按月持续投入。\n\n"
+                (
+                    f"你当前每月约有 **{_fmt(monthly)}** 净结余，对应当前年度起点预算约 **{_fmt(monthly * 12)}**。但后续执行不应把它视作固定值，下表反映的是年度优先顺序，日常执行时再按月持续投入。\n\n"
+                    if _ACTIVE_LANG == "zh"
+                    else f"Current monthly net surplus is about **{_fmt(monthly)}**, which corresponds to a starting annual budget of about **{_fmt(monthly * 12)}**. It should not be treated as fixed, and the table below reflects annual priority order while execution can continue month by month.\n\n"
+                )
             )
         if future_cf:
             parts.append(
-                f"> 参考逐年快照：{future_cf['start_year']}-{future_cf['end_year']} 年常规净现金流"
-                f"年均约 {_fmt(future_cf['avg_net'])}，区间大致在 {_fmt(future_cf['min_net'])}"
-                f"（{future_cf['min_year']}年）到 {_fmt(future_cf['max_net'])}（{future_cf['max_year']}年）之间。\n\n"
+                (
+                    f"> 参考逐年快照：{future_cf['start_year']}-{future_cf['end_year']} 年常规净现金流年均约 {_fmt(future_cf['avg_net'])}，区间大致在 {_fmt(future_cf['min_net'])}（{future_cf['min_year']}年）到 {_fmt(future_cf['max_net'])}（{future_cf['max_year']}年）之间。\n\n"
+                    if _ACTIVE_LANG == "zh"
+                    else f"> Reference from yearly snapshots: average regular net cash flow from {future_cf['start_year']} to {future_cf['end_year']} is about {_fmt(future_cf['avg_net'])}, with a range roughly from {_fmt(future_cf['min_net'])} in {future_cf['min_year']} to {_fmt(future_cf['max_net'])} in {future_cf['max_year']}.\n\n"
+                )
             )
 
         parts.append(f"| {_bi('顺序', 'Order')} | {_bi('资金去向', 'Destination')} | {_bi('月度执行口径', 'Monthly execution')} | {_bi('需累计资金', 'Funding need')} | {_bi('说明', 'Notes')} |\n")
@@ -1183,7 +1344,8 @@ def _render_section_c(
         if em_shortfall > 0:
             parts.append(
                 f"| {seq} | 应急储备补足 | 灵活\\* | {_fmt(em_shortfall)} "
-                f"| 低于目标时优先补足 |\n"
+                f"| 低于目标时优先补足 |\n" if _ACTIVE_LANG == "zh" else
+                f"| {seq} | Emergency reserve top-up | Flexible\\* | {_fmt(em_shortfall)} | Refill first when below target |\n"
             )
             seq += 1
 
@@ -1192,10 +1354,10 @@ def _render_section_c(
             need = b.amount - b.initial_balance
             if need <= 0:
                 continue
-            label = "用于对应年度规划事项"
-            yr_note = f"（{b.withdrawal_year}年使用）" if b.withdrawal_year else ""
+            label = _bi("用于对应年度规划事项", "For the planned use in the target year")
+            yr_note = _bi(f"（{b.withdrawal_year}年使用）", f"(used in {b.withdrawal_year})") if b.withdrawal_year else ""
             parts.append(
-                f"| {seq} | {b.name} | 动态† | {_fmt(need)} "
+                f"| {seq} | {_display_bucket_name(b.name)} | {_bi('动态†', 'Dynamic†')} | {_fmt(need)} "
                 f"| {label}{yr_note} |\n"
             )
             seq += 1
@@ -1203,16 +1365,16 @@ def _render_section_c(
         # CI 自留（方案B/D）
         if ci_monthly > 0:
             parts.append(
-                f"| {seq} | 重疾自留储备 | {_fmt(ci_monthly)}/月‡ "
+                f"| {seq} | {_bi('重疾自留储备', 'Critical illness self-funded reserve')} | {_fmt(ci_monthly)}/{_bi('月', 'month')}‡ "
                 f"| {_fmt(plan.ci_reserve.amount)} "
-                f"| 分期储备固定月供 |\n"
+                f"| {_bi('分期储备固定月供', 'Fixed monthly contribution for staged reserve')} |\n"
             )
             seq += 1
 
         # 富余资金
         if plan.surplus:
             parts.append(
-                f"| {seq} | 富余资金 | 剩余全部 | — | 所有目标达标后自动转入 |\n"
+                f"| {seq} | {_display_bucket_name('富余资金')} | {_bi('剩余全部', 'All remaining funds')} | — | {_bi('所有目标达标后自动转入', 'Automatically receives funds after all other targets are met')} |\n"
             )
 
         parts.append("\n")
@@ -1225,7 +1387,7 @@ def _render_section_c(
 
     # 注意事项（保留原样）
     if plan.warnings:
-        parts.append("> **注意事项:**\n")
+        parts.append(_bi("> **注意事项:**\n", "> **Notes:**\n"))
         for w in plan.warnings:
             parts.append(f"> - {w}\n")
         parts.append("\n")
@@ -1259,8 +1421,10 @@ def _render_section_c3(
 
     parts.append(f"---\n\n### C3. {_bi('心理账户余额（居中情景）', 'Mental Account Balances (middle outcome)')}\n\n")
     parts.append(
-        "下表展示各心理账户在每个年末的 <b>居中结果余额</b>，并已计入投资收益。"
-        "“初始划拨”代表最开始的资金分层，后续各年展示的是每年年末滚动后的账户余额。\n\n"
+        _bi(
+            "下表展示各心理账户在每个年末的 <b>居中结果余额</b>，并已计入投资收益。“初始划拨”代表最开始的资金分层，后续各年展示的是每年年末滚动后的账户余额。\n\n",
+            "The table below shows the <b>middle-outcome balance</b> of each mental account at each year end, including investment results. “Initial allocation” is the starting bucket split, and later rows show rolling year-end balances.\n\n",
+        )
     )
 
     bal_by_key: dict[tuple[str, int], float] = {}
@@ -1268,7 +1432,7 @@ def _render_section_c3(
         if s.year <= chart_end_year:
             bal_by_key[(s.bucket_name, s.year)] = s.p50
 
-    header_cols = [_bi("年份", "Year")] + account_order + [f"**{_bi('合计', 'Total')}**"]
+    header_cols = [_bi("年份", "Year")] + [_display_bucket_name(x) for x in account_order] + [f"**{_bi('合计', 'Total')}**"]
     parts.append("| " + " | ".join(header_cols) + " |\n")
     parts.append("|" + "---|" * len(header_cols) + "\n")
 
@@ -1367,12 +1531,14 @@ def _render_stage_heatmap(
 
     parts.append(f"---\n\n### C4. {_bi('心理账户余额（按阶段着色）', 'Mental Account Balances (stage-colored)')}\n\n")
     parts.append(
-        "这张表和 C3 使用同一组数据，只是额外用颜色标出每笔资金所处阶段。"
-        "单元格中的金额仍是 <b>居中结果余额</b>，左侧符号对应阶段："
-        f" {_stage_legend_html(include_expired_note=True)}\n\n"
+        _bi(
+            "这张表和 C3 使用同一组数据，只是额外用颜色标出每笔资金所处阶段。单元格中的金额仍是 <b>居中结果余额</b>，左侧符号对应阶段：",
+            "This table uses the same data as C3 but adds colors to show the stage of each bucket. Amounts in the cells are still <b>middle-outcome balances</b>, and the symbol on the left indicates stage:",
+        )
+        + f" {_stage_legend_html(include_expired_note=True)}\n\n"
     )
 
-    header_cols = [_bi("年份", "Year")] + account_order + [_bi("合计", "Total")]
+    header_cols = [_bi("年份", "Year")] + [_display_bucket_name(x) for x in account_order] + [_bi("合计", "Total")]
     parts.append('<div class="stage-table-wrapper">\n<table class="stage-table">\n<thead>\n<tr>')
     for h in header_cols:
         parts.append(f'<th>{h}</th>')
@@ -1430,10 +1596,10 @@ def _render_section_c6(
     # 每 bucket 1 张图: stacked bar + fan band + p50 总线
     parts.append(f"### C6. {_bi('各层余额与资金来源', 'Bucket Balances and Funding Sources')}\n\n")
     parts.append(
-        "下图把每个资金层单独展开来看。"
-        "每年柱状部分展示这笔钱在居中结果下由“上年滚存 / 当年现金投入 / 当年收益”三部分组成；"
-        "浅色阴影表示从偏保守到偏乐观的大致结果范围，深色线表示居中结果。"
-        "若该资金层有明确目标，会同时显示目标线；节点资金在对应年份年末支取后清零。\n\n"
+        _bi(
+            "下图把每个资金层单独展开来看。每年柱状部分展示这笔钱在居中结果下由“上年滚存 / 当年现金投入 / 当年收益”三部分组成；浅色阴影表示从偏保守到偏乐观的大致结果范围，深色线表示居中结果。若该资金层有明确目标，会同时显示目标线；节点资金在对应年份年末支取后清零。\n\n",
+            "The charts below expand each bucket separately. The bars show how the middle outcome is built from prior-year carry, current-year contribution, and current-year return; the light band shows the approximate range from weaker to stronger outcomes, and the dark line shows the middle outcome. If a bucket has a clear target, a target line is also shown; milestone buckets are withdrawn and reset at the end of the target year.\n\n",
+        )
     )
     parts.append('<div class="bucket-chart-grid">\n')
 
@@ -1479,7 +1645,7 @@ def _render_section_c6(
         }
         parts.append(
             f'<div class="bucket-chart-cell">\n'
-            f'  <h4>{bname}</h4>\n'
+            f'  <h4>{_display_bucket_name(bname)}</h4>\n'
             f'  <div class="chart-container" style="height:220px;">\n'
             f'    <canvas id="bucketFanChart_{slug}"></canvas>\n'
             f'  </div>\n'
@@ -1508,9 +1674,10 @@ def _render_section_c5(
 
     parts.append(f"### C5. {_bi('各层余额时序堆叠', 'Stacked Bucket Balance Timeline')}\n\n")
     parts.append(
-        "下图把所有资金层放在一张图里看。"
-        "每个色块代表一个资金层在各年年末的居中结果余额；当对应事件在该年年末发生后，这一层会被支取并归零。"
-        "外侧灰色区间表示总资产余额从偏保守到偏乐观的大致波动范围。\n\n"
+        _bi(
+            "下图把所有资金层放在一张图里看。每个色块代表一个资金层在各年年末的居中结果余额；当对应事件在该年年末发生后，这一层会被支取并归零。外侧灰色区间表示总资产余额从偏保守到偏乐观的大致波动范围。\n\n",
+            "The chart below places all buckets together. Each color block represents the middle-outcome year-end balance of one bucket; after the matching milestone occurs at year end, that bucket is withdrawn and resets to zero. The outer gray band shows the approximate range of total assets from weaker to stronger outcomes.\n\n",
+        )
     )
 
     all_years = sorted({s.year for s in bucket_result.snapshots})

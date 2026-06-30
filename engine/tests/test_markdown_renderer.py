@@ -2,6 +2,7 @@
 import sys
 import tempfile
 import unittest
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -110,6 +111,62 @@ class TestRenderPlaybook(unittest.TestCase):
         self.assertIn("Executive Summary", md)
         self.assertIn("Client Overview", md)
         self.assertIn("Amount / parameter", md)
+
+    def test_english_mode_has_no_system_chinese_with_english_inputs(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as f:
+            f.write(
+                "profile_version: '0.1'\n"
+                "schema_version: 'handbook-v0.1'\n"
+                "family:\n"
+                "  members:\n"
+                "    - name: John\n"
+                "      age: 40\n"
+                "      role: primary_breadwinner\n"
+                "      annual_income: 600000\n"
+                "      monthly_expense: 12000\n"
+                "      retirement_age: 60\n"
+                "      retirement_pension: 5000\n"
+                "      retirement_annuity: 2000\n"
+                "      retirement_expense_coeff: 0.7\n"
+                "      medical_covered: true\n"
+                "    - name: Mary\n"
+                "      age: 38\n"
+                "      role: secondary_breadwinner\n"
+                "      annual_income: 300000\n"
+                "      monthly_expense: 8000\n"
+                "      retirement_age: 60\n"
+                "      retirement_expense_coeff: 0.7\n"
+                "events:\n"
+                "  - id: house_001\n"
+                "    type: housing\n"
+                "    description: Home Upgrade\n"
+                "    timing_year: 2030\n"
+                "    estimated_amount: 2000000\n"
+                "assets:\n"
+                "  financial:\n"
+                "    total_value: 1500000\n"
+                "  liquidity_reserve_months: 6\n"
+            )
+            path = Path(f.name)
+        try:
+            profile = load_profile(path, current_year=2026)
+            assumptions = read_assumptions(ASSUMPTIONS_PATH)
+            projections = project_to_nodes(profile)
+            plan = allocate(profile, projections, assumptions)
+            terminal = project_to_terminal(profile, profile.total_financial_assets, 2030)
+            yearly = project_yearly(profile)
+            md = render_playbook(
+                profile=profile,
+                plan=plan,
+                projections=projections,
+                terminal_steps=terminal,
+                yearly_snapshots=yearly,
+                bucket_result=None,
+                lang="en",
+            )
+            self.assertIsNone(re.search(r"[\u4e00-\u9fff]", md), md)
+        finally:
+            path.unlink(missing_ok=True)
 
     def test_renders_event_timeline(self):
         md = _render(bucket_result=None)

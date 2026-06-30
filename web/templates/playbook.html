@@ -35,6 +35,28 @@ document.addEventListener('DOMContentLoaded', function() {
     return window.__lang === 'en' ? en : zh;
   }
 
+  function bucketLabel(name) {
+    if (window.__lang !== 'en') return name;
+    if (name === '应急储备') return 'Emergency Reserve';
+    if (name === '富余资金') return 'Surplus Account';
+    if (name.indexOf('重疾准备金') === 0) return name.replace('重疾准备金', 'Critical Illness Reserve');
+    if (name.indexOf('近期-') === 0) return 'Near-term - ' + name.slice(3);
+    if (name.indexOf('中期-') === 0) return 'Mid-term - ' + name.slice(3);
+    if (name.indexOf('远期-') === 0) return 'Long-term - ' + name.slice(3);
+    if (name.indexOf('超远期-') === 0) return 'Ultra-long-term - ' + name.slice(4);
+    return name;
+  }
+
+  function moneyTick(v) {
+    if (window.__lang === 'en') {
+      if (Math.abs(v) >= 1000000) return '¥' + (v / 1000000).toFixed(1) + 'M';
+      if (Math.abs(v) >= 1000) return '¥' + (v / 1000).toFixed(0) + 'k';
+      return '¥' + Number(v).toFixed(0);
+    }
+    if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万';
+    return '¥' + Number(v).toFixed(0);
+  }
+
   var articleEl = document.getElementById('playbook-article');
   if (articleEl) {
     var slugCounts = {};
@@ -183,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: { display: true, text: tp('金额 (元)', 'Amount (RMB)') },
                 min: wrMin,
                 max: wrMax,
-                ticks: { callback: function(v) { return '¥' + (v / 10000).toFixed(0) + '万'; } }
+                ticks: { callback: moneyTick }
               },
             },
             plugins: {
@@ -284,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 title: { display: true, text: tp('金融资产余额 (元)', 'Financial asset balance (RMB)') },
                 min: pMin,
                 max: pMax,
-                ticks: { callback: function(v) { return '¥' + (v / 10000).toFixed(0) + '万'; } }
+                ticks: { callback: moneyTick }
               },
             },
             plugins: {
@@ -600,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // stacked bar: 每层一个 dataset
         bnames.forEach(function(name, i) {
           datasets.push({
-            label: name,
+            label: bucketLabel(name),
             type: 'bar',
             data: d4.series[name],
             backgroundColor: colors[i % colors.length],
@@ -646,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
               y: {
                 min: bMin,
                 max: bMax,
-                ticks: { callback: function(v) { if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万'; return '¥' + v.toFixed(0); } }
+                ticks: { callback: moneyTick }
               },
             },
             plugins: {
@@ -690,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var datasets = [];
         bnames.forEach(function(name, i) {
           datasets.push({
-            label: name,
+            label: bucketLabel(name),
             type: 'line',
             data: posSeries[name],
             backgroundColor: areaColors[i % areaColors.length],
@@ -729,7 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 stacked: true,
                 min: 0,
                 max: bMax,
-                ticks: { callback: function(v) { if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万'; return '¥' + v.toFixed(0); } }
+                ticks: { callback: moneyTick }
               },
             },
             plugins: {
