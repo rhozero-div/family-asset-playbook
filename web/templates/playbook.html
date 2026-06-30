@@ -1,26 +1,32 @@
 {% extends "base.html" %}
-{% block title %}FAPM — 客户剧本 / Playbook{% endblock %}
+{% block title %}{% if lang == "en" %}FAPM — Playbook{% else %}FAPM — 客户剧本{% endif %}{% endblock %}
 {% block head_extra %}
 <script src="/static/chart.umd.min.js?v=4.4.7"></script>
 {% endblock %}
 {% block content %}
 {% if client_code %}
 <div class="success-banner">
-  客户 {{ client_code }}（{{ client_name }}）已保存 / Client {{ client_code }} ({{ client_name }}) has been saved.
-  <a href="/questionnaire/load/{{ client_code }}?lang={{ lang }}" style="margin-left: 0.5rem;">编辑问卷 / Edit</a>
-  <a href="/?lang={{ lang }}" style="margin-left: 0.5rem;">← 客户列表 / Client List</a>
+  {% if lang == "en" %}
+  Client {{ client_code }} ({{ client_name }}) has been saved.
+  <a href="/questionnaire/load/{{ client_code }}?lang={{ lang }}" style="margin-left: 0.5rem;">Edit</a>
+  <a href="/?lang={{ lang }}" style="margin-left: 0.5rem;">← Client List</a>
+  {% else %}
+  客户 {{ client_code }}（{{ client_name }}）已保存。
+  <a href="/questionnaire/load/{{ client_code }}?lang={{ lang }}" style="margin-left: 0.5rem;">编辑问卷</a>
+  <a href="/?lang={{ lang }}" style="margin-left: 0.5rem;">← 客户列表</a>
+  {% endif %}
 </div>
 {% endif %}
 <div class="playbook-actions">
-  <a href="/?lang={{ lang }}" class="btn-secondary">← 客户列表 / Client List</a>
-  <a href="data:text/markdown;charset=utf-8,{{ playbook_md|urlencode }}" download="playbook.md" class="btn-secondary">📥 下载 Markdown / Download Markdown</a>
+  <a href="/?lang={{ lang }}" class="btn-secondary">{% if lang == "en" %}← Client List{% else %}← 客户列表{% endif %}</a>
+  <a href="data:text/markdown;charset=utf-8,{{ playbook_md|urlencode }}" download="playbook.md" class="btn-secondary">📥 {% if lang == "en" %}Download Markdown{% else %}下载 Markdown{% endif %}</a>
 </div>
 
 <div class="playbook-page">
   <div class="playbook-main">
     <div class="playbook-hero">
-      <div class="playbook-hero-title">家庭资产配置剧本 / Family Asset Playbook</div>
-      <div class="playbook-hero-desc">按“客户概览 → 综合建议 → 资产推演 → 执行方案”的顺序阅读，会更容易把握整体逻辑 / Reading in the order of “overview → summary → projection → execution plan” makes the logic easier to follow.</div>
+      <div class="playbook-hero-title">{% if lang == "en" %}Family Asset Playbook{% else %}家庭资产配置剧本{% endif %}</div>
+      <div class="playbook-hero-desc">{% if lang == "en" %}Reading in the order of “overview → summary → projection → execution plan” makes the logic easier to follow.{% else %}按“客户概览 → 综合建议 → 资产推演 → 执行方案”的顺序阅读，会更容易把握整体逻辑。{% endif %}</div>
     </div>
 
     <article class="playbook" id="playbook-article">

@@ -76,6 +76,10 @@ def _fmt(x: float) -> str:
     return f"¥{x:,.0f}"
 
 
+def _join_items(items: list[str]) -> str:
+    return ", ".join(items) if _ACTIVE_LANG == "en" else "、".join(items)
+
+
 def _format_pct(x: float) -> str:
     return f"{x * 100:.1f}%"
 
@@ -299,7 +303,7 @@ def _summary_state_lines(
         )
 
     if future_cf and future_cf["negative_years"]:
-        neg_years = "、".join(str(year) for year in future_cf["negative_years"][:3])
+        neg_years = _join_items([str(year) for year in future_cf["negative_years"][:3]])
         _append_unique(
             lines,
             (
@@ -570,7 +574,7 @@ def _summary_insurance_lines(
             missing_items.append(_bi("重疾保障", "critical illness coverage"))
         if life_gap:
             missing_items.append(_bi("定期寿险", "term life coverage"))
-        missing_text = "、".join(missing_items) if _ACTIVE_LANG == "zh" else ", ".join(missing_items)
+        missing_text = _join_items(missing_items)
         if premium_pressure:
             _append_unique(
                 lines,

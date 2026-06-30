@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import re
 from pathlib import Path
+from jinja2 import Environment, FileSystemLoader
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -22,6 +23,7 @@ from engine.projection import (  # noqa: E402
 
 SAMPLE_YAML = ROOT / "samples" / "client-profile.example.yaml"
 ASSUMPTIONS_PATH = ROOT / "handbook" / "03-asset-assumptions.md"
+TEMPLATE_ROOT = ROOT / "web" / "templates"
 _DEFAULT = object()
 
 
@@ -167,6 +169,44 @@ class TestRenderPlaybook(unittest.TestCase):
             self.assertIsNone(re.search(r"[\u4e00-\u9fff]", md), md)
         finally:
             path.unlink(missing_ok=True)
+
+    def test_english_mode_hides_system_chinese_for_sample_profile(self):
+        profile, projections, plan, terminal, yearly, _, bucket_result = _build(include_bucket_result=True)
+        md = render_playbook(
+            profile=profile,
+            plan=plan,
+            projections=projections,
+            terminal_steps=terminal,
+            yearly_snapshots=yearly,
+            bucket_result=bucket_result,
+            lang="en",
+        )
+        html = re.sub(r"<script\b[^>]*>.*?</script>", "", md, flags=re.S | re.I)
+        html = re.sub(r"<style\b[^>]*>.*?</style>", "", html, flags=re.S | re.I)
+        visible = re.sub(r"<[^>]+>", " ", html)
+        for token in ("应急储备", "富余资金", "近期", "中期", "远期", "超远期"):
+            self.assertNotIn(token, visible)
+
+    def test_index_template_english_has_no_visible_chinese(self):
+        env = Environment(loader=FileSystemLoader(str(TEMPLATE_ROOT)))
+        template = env.get_template("index.html")
+
+        class _Req:
+            class url:
+                path = "/"
+
+        for storage_enabled in (False, True):
+            html = template.render(
+                lang="en",
+                storage_enabled=storage_enabled,
+                request=_Req(),
+                asset_version="test",
+                lang_attr=lambda lang: "en",
+                clients=[],
+            )
+            html = re.sub(r"<script\b[^>]*>.*?</script>", "", html, flags=re.S | re.I)
+            visible = re.sub(r"<[^>]+>", " ", html)
+            self.assertIsNone(re.search(r"[\u4e00-\u9fff]", visible), visible)
 
     def test_renders_event_timeline(self):
         md = _render(bucket_result=None)
