@@ -27,6 +27,10 @@ _DRAWDOWN_CAPS = {
 }
 
 
+def _bi(cn: str, en: str) -> str:
+    return f"{cn} / {en}"
+
+
 def _fmt(x: float) -> str:
     """格式化金额。"""
     return f"¥{x:,.0f}"
@@ -546,32 +550,47 @@ def _headline_conclusion_lines(
     if future_nodes and not negative_nodes:
         last_node = max(future_nodes, key=lambda projection: projection.year)
         lines.append(
-            f"- **重大节点覆盖结论**：按当前测算，已录入的重大支出节点整体可满足；"
+            f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**：按当前测算，已录入的重大支出节点整体可满足；"
+            "The currently recorded major spending milestones can be covered under this projection. "
             f"截至 {last_node.year} 年，最后一个节点 {last_node.description} 之后仍保留约 {_fmt(last_node.balance_after)} 结余。"
         )
     elif negative_nodes:
         first_shortfall = min(negative_nodes, key=lambda projection: projection.year)
         lines.append(
-            f"- **重大节点覆盖结论**：按当前测算，并非所有重大支出节点都能满足；"
+            f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**：按当前测算，并非所有重大支出节点都能满足；"
+            "Not every recorded major spending milestone can be covered under the current setup. "
             f"最早的缺口会出现在 {first_shortfall.year} 年的 {first_shortfall.description}，"
             f"缺口约 {_fmt(abs(first_shortfall.gap_or_surplus))}。"
         )
     else:
-        lines.append("- **重大节点覆盖结论**：当前档案未录入需要单独测算的大额节点，现阶段可先把重点放在持续积累与定期回看上。")
+        lines.append(
+            f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**：当前档案未录入需要单独测算的大额节点，"
+            "现阶段可先把重点放在持续积累与定期回看上。 No separate large milestone has been recorded yet, "
+            "so the focus can remain on ongoing accumulation and periodic review."
+        )
 
     if bucket_result is not None and plan.surplus is not None:
         stats = bucket_result.annualized_return_for_bucket("富余资金")
         if stats is not None:
             lines.append(
-                f"- **富余资金长期收益结论**：如果把富余资金账户从 {stats.start_year} 年持有到 {stats.end_year} 年，"
+                f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**：如果把富余资金账户从 {stats.start_year} 年持有到 {stats.end_year} 年，"
+                "If the surplus account is held through the full projection window, "
                 f"更居中的结果大致相当于每年增长 {_format_pct(stats.p50)}；"
                 f"若结果偏保守，长期下来大约可能落在每年 {_format_pct(stats.p10)} 到 {_format_pct(stats.p25)} 左右，"
                 f"若结果偏顺利，则大致可能在每年 {_format_pct(stats.p75)} 到 {_format_pct(stats.p90)} 左右。"
             )
         else:
-            lines.append("- **富余资金长期收益结论**：这笔长期资金的收益区间暂时还未算出，需等收益推演可用后再补充。")
+            lines.append(
+                f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
+                "这笔长期资金的收益区间暂时还未算出，需等收益推演可用后再补充。 "
+                "The return range for this long-term surplus account is not available yet."
+            )
     else:
-        lines.append("- **富余资金长期收益结论**：当前没有单独划出的富余资金账户，所以现阶段不单独讨论这部分长期资金的增长表现。")
+        lines.append(
+            f"- **{_bi('富余资金长期收益结论', 'Long-term surplus account return conclusion')}**："
+            "当前没有单独划出的富余资金账户，所以现阶段不单独讨论这部分长期资金的增长表现。 "
+            "There is no separate surplus account at the moment, so long-term growth is not discussed separately."
+        )
 
     return lines
 
@@ -582,11 +601,11 @@ def _render_metadata(profile: ClientProfile) -> str:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     semver = profile.schema_version.replace("handbook-v", "")
     return (
-        f"# {profile.family_name} 家庭资产配置剧本\n\n"
-        f"**生成时间:** {timestamp} | "
-        f"**方法论版本:** handbook-v{semver} | "
-        f"**风险偏好:** {profile.risk_preference}\n\n"
-        f"> 本剧本用于家庭资产规划沟通，不构成投资建议。所有数值基于方法论假设，实际配置仍需结合专业人士意见。\n\n"
+        f"# {profile.family_name} {_bi('家庭资产配置剧本', 'Family Asset Playbook')}\n\n"
+        f"**{_bi('生成时间', 'Generated at')}:** {timestamp} | "
+        f"**{_bi('方法论版本', 'Method version')}:** handbook-v{semver} | "
+        f"**{_bi('风险偏好', 'Risk preference')}:** {profile.risk_preference}\n\n"
+        f"> {_bi('本剧本用于家庭资产规划沟通，不构成投资建议。所有数值基于方法论假设，实际配置仍需结合专业人士意见。', 'This playbook is for family asset planning discussion only and does not constitute investment advice. All figures are assumption-based and should be reviewed with a qualified professional before execution.')}\n\n"
     )
 
 
@@ -598,27 +617,27 @@ def _render_section_a(profile: ClientProfile) -> str:
     net_worth = (profile.total_real_estate_value + profile.total_financial_assets
                  - profile.total_outstanding_debt)
 
-    parts = ["---\n\n## A. 客户情况概览\n\n"]
+    parts = [f"---\n\n## A. {_bi('客户情况概览', 'Client Overview')}\n\n"]
 
     # A1. 初始状态
-    parts.append("### A1. 初始资产与收支状态\n\n")
-    parts.append("| 项目 | 金额 |\n|---|---|\n")
-    parts.append(f"| 房产估值 | {_fmt(profile.total_real_estate_value)} |\n")
-    parts.append(f"| 金融资产(境内+海外) | {_fmt(profile.total_financial_assets)} |\n")
-    parts.append(f"| 负债余额 | {_fmt(profile.total_outstanding_debt)} |\n")
-    parts.append(f"| **家庭净资产** | **{_fmt(net_worth)}** |\n\n")
+    parts.append(f"### A1. {_bi('初始资产与收支状态', 'Starting Assets and Cash Flow')}\n\n")
+    parts.append(f"| {_bi('项目', 'Item')} | {_bi('金额', 'Amount')} |\n|---|---|\n")
+    parts.append(f"| {_bi('房产估值', 'Real estate value')} | {_fmt(profile.total_real_estate_value)} |\n")
+    parts.append(f"| {_bi('金融资产(境内+海外)', 'Financial assets (onshore + offshore)')} | {_fmt(profile.total_financial_assets)} |\n")
+    parts.append(f"| {_bi('负债余额', 'Outstanding debt')} | {_fmt(profile.total_outstanding_debt)} |\n")
+    parts.append(f"| **{_bi('家庭净资产', 'Household net worth')}** | **{_fmt(net_worth)}** |\n\n")
 
-    parts.append("| 项目 | 月度金额 |\n|---|---|\n")
-    parts.append(f"| 家庭月收入(税前) | {_fmt(monthly_income)} |\n")
+    parts.append(f"| {_bi('项目', 'Item')} | {_bi('月度金额', 'Monthly amount')} |\n|---|---|\n")
+    parts.append(f"| {_bi('家庭月收入(税前)', 'Household monthly income (pre-tax)')} | {_fmt(monthly_income)} |\n")
     if profile.monthly_living_expense > 0:
-        parts.append(f"| 常规支出(含家庭额外) | {_fmt(profile.monthly_living_expense)} |\n")
+        parts.append(f"| {_bi('常规支出(含家庭额外)', 'Regular expenses (including household-level extra spending)')} | {_fmt(profile.monthly_living_expense)} |\n")
     if profile.monthly_liabilities > 0:
-        parts.append(f"| 贷款月供 | {_fmt(profile.monthly_liabilities)} |\n")
+        parts.append(f"| {_bi('贷款月供', 'Monthly debt payment')} | {_fmt(profile.monthly_liabilities)} |\n")
     if monthly_premium > 0:
-        parts.append(f"| 保险保费(月均) | {_fmt(monthly_premium)} |\n")
-    parts.append(f"| **月度结余** | **{_fmt(monthly_surplus)}** |\n")
+        parts.append(f"| {_bi('保险保费(月均)', 'Insurance premium (monthly average)')} | {_fmt(monthly_premium)} |\n")
+    parts.append(f"| **{_bi('月度结余', 'Monthly surplus')}** | **{_fmt(monthly_surplus)}** |\n")
     if monthly_surplus < 0:
-        parts.append("\n> **警告:** 月度支出超过收入,现金流为负。\n")
+        parts.append(f"\n> **{_bi('警告', 'Warning')}:** {_bi('月度支出超过收入,现金流为负。', 'Monthly spending is above income and cash flow is negative.')}\n")
     parts.append("\n")
 
     # 退休后收支
@@ -634,8 +653,8 @@ def _render_section_a(profile: ClientProfile) -> str:
     if has_retirement:
         ret_income = retirement_rollup["monthly_income_total"] or (profile.retirement_monthly_pension + profile.retirement_monthly_annuity)
         ret_expense = retirement_rollup["monthly_expense_total"] or profile.retirement_monthly_expense
-        parts.append("**退休后预期**\n\n")
-        parts.append("| 项目 | 金额/参数 | 说明 |\n")
+        parts.append(f"**{_bi('退休后预期', 'Retirement Outlook')}**\n\n")
+        parts.append(f"| {_bi('项目', 'Item')} | {_bi('金额/参数', 'Amount / parameter')} | {_bi('说明', 'Notes')} |\n")
         parts.append("|---|---|---|\n")
         if ret_income > 0:
             income_items = retirement_rollup["income_items"]
@@ -643,13 +662,13 @@ def _render_section_a(profile: ClientProfile) -> str:
                 f"养老金 {_fmt(profile.retirement_monthly_pension)} + 年金 {_fmt(profile.retirement_monthly_annuity)}"
             )
             parts.append(
-                f"| 退休月收入 | {_fmt(ret_income)} | "
+                f"| {_bi('退休月收入', 'Retirement monthly income')} | {_fmt(ret_income)} | "
                 f"{income_desc} |\n"
             )
         if ret_expense > 0:
             expense_items = retirement_rollup["expense_items"]
             expense_desc = "；".join(f"{name} {_fmt(value)}" for name, value in expense_items[:4]) if expense_items else "退休后月度生活支出口径"
-            parts.append(f"| 退休月支出 | {_fmt(ret_expense)} | {expense_desc} |\n")
+            parts.append(f"| {_bi('退休月支出', 'Retirement monthly spending')} | {_fmt(ret_expense)} | {expense_desc} |\n")
         hc = retirement_rollup["first_year_healthcare_selfpay_total"] or profile.healthcare_starting_annual
         if hc > 0:
             growth_desc = "—"
@@ -661,25 +680,25 @@ def _render_section_a(profile: ClientProfile) -> str:
                 growth_desc = f"年复利增长 {pct}%"
             cap_desc = _fmt(sum(annual_caps)) if annual_caps else "—"
             gross_hc = sum(m.healthcare_starting_annual for m in profile.members if m.healthcare_starting_annual > 0) or profile.healthcare_starting_annual
-            parts.append(f"| 退休首年医疗年支出(毛额) | {_fmt(gross_hc)} | {growth_desc}；年度封顶 {cap_desc} |\n")
+            parts.append(f"| {_bi('退休首年医疗年支出(毛额)', 'Gross annual healthcare spending in first retirement year')} | {_fmt(gross_hc)} | {growth_desc}；{_bi('年度封顶', 'annual cap')} {cap_desc} |\n")
             healthcare_items = retirement_rollup["healthcare_items"]
             hc_desc = "；".join(f"{name} {_fmt(value)}" for name, value in healthcare_items[:4]) if healthcare_items else "按退休首年医疗支出测算"
             parts.append(
-                f"| 退休首年医疗自付 | {_fmt(hc)} | {hc_desc} |\n"
+                f"| {_bi('退休首年医疗自付', 'Out-of-pocket healthcare in first retirement year')} | {_fmt(hc)} | {hc_desc} |\n"
             )
         parts.append("\n")
 
     # 负债还清时间
     if profile.monthly_liabilities > 0 and profile.remaining_liability_end_year > profile.current_year:
-        parts.append(f"**贷款还清:** {profile.remaining_liability_end_year} 年"
+        parts.append(f"**{_bi('贷款还清', 'Debt fully repaid')}:** {profile.remaining_liability_end_year} 年"
                      f"(剩余 {profile.remaining_liability_end_year - profile.current_year} 年)\n\n")
 
     target_liquidity_months = profile.liquidity_reserve_months if profile.liquidity_reserve_months > 0 else 6.0
-    parts.append(f"**流动性储备:** 当前 {profile.liquidity_reserve_months:.0f} 个月(目标 {target_liquidity_months:.0f} 个月)\n\n")
+    parts.append(f"**{_bi('流动性储备', 'Liquidity reserve')}:** 当前 {profile.liquidity_reserve_months:.0f} 个月(目标 {target_liquidity_months:.0f} 个月) / Current {profile.liquidity_reserve_months:.0f} months (target {target_liquidity_months:.0f} months)\n\n")
 
     # A2. 人生节点时间线
-    parts.append("### A2. 人生阶段节点\n\n")
-    parts.append("| 年份 | 距今 | 事件 | 预计金额 |\n")
+    parts.append(f"### A2. {_bi('人生阶段节点', 'Life Milestones')}\n\n")
+    parts.append(f"| {_bi('年份', 'Year')} | {_bi('距今', 'Years from now')} | {_bi('事件', 'Event')} | {_bi('预计金额', 'Estimated amount')} |\n")
     parts.append("|---|---|---|---|\n")
     for evt in profile.events:
         if evt.timing_year < profile.current_year:
@@ -711,32 +730,32 @@ def _render_section_a3(
     metric_lines = _summary_metric_lines(profile, plan, future_cf, retirement_gap)
     recalc_lines = _summary_recalc_lines(profile, plan, future_cf, retirement_gap)
 
-    parts = ["---\n\n## 综合建议摘要\n\n"]
+    parts = [f"---\n\n## {_bi('综合建议摘要', 'Executive Summary')}\n\n"]
     for line in headline_lines:
         parts.append(f"{line}\n")
     parts.append("\n")
 
-    parts.append("**1. 现阶段的整体判断**\n\n")
+    parts.append(f"**1. {_bi('现阶段的整体判断', 'Overall reading of the current stage')}**\n\n")
     for line in state_lines:
         parts.append(f"{line}\n")
     parts.append("\n")
 
-    parts.append("**2. 现在最值得优先做的 3 件事**\n\n")
+    parts.append(f"**2. {_bi('现在最值得优先做的 3 件事', 'Top 3 priorities right now')}**\n\n")
     for line in action_lines:
         parts.append(f"{line}\n")
     parts.append("\n")
 
-    parts.append("**3. 保障配置建议**\n\n")
+    parts.append(f"**3. {_bi('保障配置建议', 'Insurance structure suggestion')}**\n\n")
     for line in insurance_lines:
         parts.append(f"{line}\n")
     parts.append("\n")
 
-    parts.append("**4. 后续需要持续关注的几个信号**\n\n")
+    parts.append(f"**4. {_bi('后续需要持续关注的几个信号', 'Signals to keep monitoring')}**\n\n")
     for line in metric_lines:
         parts.append(f"{line}\n")
     parts.append("\n")
 
-    parts.append("**5. 出现哪些变化时，建议尽快重算**\n\n")
+    parts.append(f"**5. {_bi('出现哪些变化时，建议尽快重算', 'When to recalculate soon')}**\n\n")
     for line in recalc_lines:
         parts.append(f"{line}\n")
     parts.append("\n")
@@ -756,10 +775,10 @@ def _render_section_b(
     future_cf = _future_cashflow_summary(profile, yearly)
 
     parts = [
-        "---\n\n## B. 资产推演\n\n"
-        f"> 本段推演主要回答“未来重大节点能否按时覆盖”。"
+        f"---\n\n## B. {_bi('资产推演', 'Asset Projection')}\n\n"
+        f"> {_bi('本段推演主要回答“未来重大节点能否按时覆盖”。', 'This section focuses on whether future major milestones can be funded on time.')}"
         f"这里以初始金融资产 {_fmt(profile.total_financial_assets)} 和逐年净现金流序列为基础，"
-        "统一按年末口径累计，并暂不计入投资收益。\n\n"
+        "统一按年末口径累计，并暂不计入投资收益。 End-of-year convention is used throughout, without investment return in this section.\n\n"
     ]
     if future_cf:
         parts.append(
@@ -856,7 +875,7 @@ def _render_section_b(
             })
             parts.append(
                 '<div class="chart-section">\n'
-                f'  <h3>家庭总资产路径（含现金流与投资结果，展示至 {chart_end_year} 年）</h3>\n'
+                f'  <h3>{_bi("家庭总资产路径（含现金流与投资结果，展示至 " + str(chart_end_year) + " 年）", "Total household asset path (cash flow and investment results included, shown through " + str(chart_end_year) + ")")}</h3>\n'
                 '  <div class="chart-container">\n'
                 '    <canvas id="cashflowWithReturnChart"></canvas>\n'
                 '  </div>\n'
@@ -887,8 +906,8 @@ def _render_section_b(
                 f'<script id="cashflow-with-return-data" type="application/json">{cashflow_with_return_data}</script>\n\n'
             )
 
-    parts.append("### 事件节点推演\n\n")
-    parts.append("| 节点 | 年份 | 距今 | 到达时累积资产 | 所需支出 | 支出后余额 | 状态 |\n")
+    parts.append(f"### {_bi('事件节点推演', 'Milestone Projection Table')}\n\n")
+    parts.append(f"| {_bi('节点', 'Milestone')} | {_bi('年份', 'Year')} | {_bi('距今', 'Years from now')} | {_bi('到达时累积资产', 'Assets available at milestone')} | {_bi('所需支出', 'Required spending')} | {_bi('支出后余额', 'Balance after spending')} | {_bi('状态', 'Status')} |\n")
     parts.append("|---|---|---|---|---|---|---|\n")
     for proj in projections:
         status = f"**盈余 {_fmt(proj.gap_or_surplus)}**" if proj.gap_or_surplus >= 0 else f"**缺口 {_fmt(abs(proj.gap_or_surplus))}**"
@@ -992,14 +1011,14 @@ def _render_section_c(
     profile: ClientProfile | None = None,
     yearly_snapshots: tuple[YearlySnapshot, ...] = (),
 ) -> str:
-    parts = ["---\n\n## C. 资产配置执行方案\n\n"]
+    parts = [f"---\n\n## C. {_bi('资产配置执行方案', 'Allocation Execution Plan')}\n\n"]
 
     total = sum(b.initial_balance for b in _iter_buckets_with_initial(plan))
     monthly = plan.monthly_surplus
     future_cf = _future_cashflow_summary(profile, yearly_snapshots) if profile else None
 
     # ── C1. 初始存量资金配置 ──
-    parts.append("### C1. 初始存量资金分配（立即执行）\n\n")
+    parts.append(f"### C1. {_bi('初始存量资金分配（立即执行）', 'Initial Capital Allocation (Do Now)')}\n\n")
 
     if total <= 0:
         parts.append("> 无可投资金融资产，跳过本节。\n\n")
@@ -1008,7 +1027,7 @@ def _render_section_c(
             f"你现有的 **{_fmt(total)}** 金融资产，可先按下表完成一次初始分层；核心目的是先把不同用途的资金分别放到合适的位置。\n\n"
         )
 
-        parts.append("| 资金层 | 用途 | 一次性划拨 | 占存量比 | 投资阶段 |\n")
+        parts.append(f"| {_bi('资金层', 'Bucket')} | {_bi('用途', 'Purpose')} | {_bi('一次性划拨', 'Initial allocation')} | {_bi('占存量比', 'Share of starting assets')} | {_bi('投资阶段', 'Investment stage')} |\n")
         parts.append("|---|---|---|---|---|\n")
 
         for b in _iter_buckets_with_initial(plan):
@@ -1041,12 +1060,12 @@ def _render_section_c(
         )
         parts.append("\n")
 
-        parts.append("**操作指引**\n\n")
-        parts.append("- 清点现有持仓，按上表目标完成首次分层配置\n")
-        parts.append(f"- 投资阶段图例：{_stage_legend_html()}\n\n")
+        parts.append(f"**{_bi('操作指引', 'Action steps')}**\n\n")
+        parts.append(f"- {_bi('清点现有持仓，按上表目标完成首次分层配置', 'Review current holdings and reallocate them to the target buckets above.')}\n")
+        parts.append(f"- {_bi('投资阶段图例', 'Stage legend')}：{_stage_legend_html()}\n\n")
 
     # ── C2. 年度净结余分配 ──
-    parts.append("### C2. 年度净结余分配（动态口径，按年预算，按月执行）\n\n")
+    parts.append(f"### C2. {_bi('年度净结余分配（动态口径，按年预算，按月执行）', 'Annual Net Surplus Allocation (annual budget, monthly execution)')}\n\n")
 
     if monthly <= 0 and not future_cf:
         parts.append("> 当前缺少可用于分配的净结余信息。\n\n")
@@ -1071,7 +1090,7 @@ def _render_section_c(
                 f"（{future_cf['min_year']}年）到 {_fmt(future_cf['max_net'])}（{future_cf['max_year']}年）之间。\n\n"
             )
 
-        parts.append("| 顺序 | 资金去向 | 月度执行口径 | 需累计资金 | 说明 |\n")
+        parts.append(f"| {_bi('顺序', 'Order')} | {_bi('资金去向', 'Destination')} | {_bi('月度执行口径', 'Monthly execution')} | {_bi('需累计资金', 'Funding need')} | {_bi('说明', 'Notes')} |\n")
         parts.append("|---|---|---|---|---|\n")
 
         seq = 1
@@ -1114,11 +1133,11 @@ def _render_section_c(
             )
 
         parts.append("\n")
-        parts.append("**分配规则**\n\n")
-        parts.append("- \\* 灵活：应急储备未达标时，优先从年度预算中补足；执行上可以按月逐步补齐\n")
-        parts.append("- † 动态：年度净结余按事件时间顺序逐层满足；执行时可按月持续投入，前一层达标后再转向下一层\n")
+        parts.append(f"**{_bi('分配规则', 'Allocation rules')}**\n\n")
+        parts.append(f"- \\* {_bi('灵活：应急储备未达标时，优先从年度预算中补足；执行上可以按月逐步补齐', 'Flexible: top up the emergency bucket first when it is below target, and rebuild it gradually through monthly execution.')}\n")
+        parts.append(f"- † {_bi('动态：年度净结余按事件时间顺序逐层满足；执行时可按月持续投入，前一层达标后再转向下一层', 'Dynamic: annual net surplus is directed by milestone timing; in practice, contribute monthly and move to the next bucket only after the prior one is sufficiently funded.')}\n")
         if ci_monthly > 0:
-            parts.append("- ‡ 固定：重疾自留月供优先于其他节点资金安排\n")
+            parts.append(f"- ‡ {_bi('固定：重疾自留月供优先于其他节点资金安排', 'Fixed: self-funded critical illness reserve contributions come before other milestone funding.')}\n")
         parts.append("\n")
 
     # 注意事项（保留原样）
@@ -1155,7 +1174,7 @@ def _render_section_c3(
     if not years:
         return "".join(parts)
 
-    parts.append("---\n\n### C3. 心理账户余额（居中情景）\n\n")
+    parts.append(f"---\n\n### C3. {_bi('心理账户余额（居中情景）', 'Mental Account Balances (middle outcome)')}\n\n")
     parts.append(
         "下表展示各心理账户在每个年末的 <b>居中结果余额</b>，并已计入投资收益。"
         "“初始划拨”代表最开始的资金分层，后续各年展示的是每年年末滚动后的账户余额。\n\n"
@@ -1166,11 +1185,11 @@ def _render_section_c3(
         if s.year <= chart_end_year:
             bal_by_key[(s.bucket_name, s.year)] = s.p50
 
-    header_cols = ["年份"] + account_order + ["**合计**"]
+    header_cols = [_bi("年份", "Year")] + account_order + [f"**{_bi('合计', 'Total')}**"]
     parts.append("| " + " | ".join(header_cols) + " |\n")
     parts.append("|" + "---|" * len(header_cols) + "\n")
 
-    init_row = ["**初始划拨**"]
+    init_row = [f"**{_bi('初始划拨', 'Initial allocation')}**"]
     init_sum = 0.0
     for aname in account_order:
         if aname == "应急储备":
@@ -1263,14 +1282,14 @@ def _render_stage_heatmap(
         clr, shape, _ = _stage_info(left)
         return "#000000", shape, clr
 
-    parts.append("---\n\n### C4. 心理账户余额（按阶段着色）\n\n")
+    parts.append(f"---\n\n### C4. {_bi('心理账户余额（按阶段着色）', 'Mental Account Balances (stage-colored)')}\n\n")
     parts.append(
         "这张表和 C3 使用同一组数据，只是额外用颜色标出每笔资金所处阶段。"
         "单元格中的金额仍是 <b>居中结果余额</b>，左侧符号对应阶段："
         f" {_stage_legend_html(include_expired_note=True)}\n\n"
     )
 
-    header_cols = ["年份"] + account_order + ["合计"]
+    header_cols = [_bi("年份", "Year")] + account_order + [_bi("合计", "Total")]
     parts.append('<div class="stage-table-wrapper">\n<table class="stage-table">\n<thead>\n<tr>')
     for h in header_cols:
         parts.append(f'<th>{h}</th>')
@@ -1326,7 +1345,7 @@ def _render_section_c6(
         )
 
     # 每 bucket 1 张图: stacked bar + fan band + p50 总线
-    parts.append("### C6. 各层余额与资金来源\n\n")
+    parts.append(f"### C6. {_bi('各层余额与资金来源', 'Bucket Balances and Funding Sources')}\n\n")
     parts.append(
         "下图把每个资金层单独展开来看。"
         "每年柱状部分展示这笔钱在居中结果下由“上年滚存 / 当年现金投入 / 当年收益”三部分组成；"
@@ -1404,7 +1423,7 @@ def _render_section_c5(
     if bucket_result is None or not bucket_result.snapshots:
         return "".join(parts)
 
-    parts.append("### C5. 各层余额时序堆叠\n\n")
+    parts.append(f"### C5. {_bi('各层余额时序堆叠', 'Stacked Bucket Balance Timeline')}\n\n")
     parts.append(
         "下图把所有资金层放在一张图里看。"
         "每个色块代表一个资金层在各年年末的居中结果余额；当对应事件在该年年末发生后，这一层会被支取并归零。"

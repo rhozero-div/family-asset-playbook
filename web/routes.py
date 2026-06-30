@@ -24,7 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROFILES_DIR = PROJECT_ROOT / "profiles"
 
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "web" / "templates"))
-templates.env.globals["asset_version"] = "20260630-01"
+templates.env.globals["asset_version"] = "20260630-02"
 templates.env.globals["storage_enabled"] = server_storage_enabled()
 
 router = APIRouter()

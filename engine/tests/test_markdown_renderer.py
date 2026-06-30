@@ -92,7 +92,8 @@ class TestRenderPlaybook(unittest.TestCase):
         self.assertIn("月度结余", md)
         self.assertIn("金融资产", md)
         self.assertIn("退休后预期", md)
-        self.assertIn("| 项目 | 金额/参数 | 说明 |", md)
+        self.assertIn("金额/参数", md)
+        self.assertIn("Amount / parameter", md)
 
     def test_renders_event_timeline(self):
         md = _render(bucket_result=None)

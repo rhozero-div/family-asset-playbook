@@ -10,22 +10,22 @@ var _phaseWeightsManuallyEdited = false;
 
 var RISK_PHASE_TEMPLATES = {
   conservative: [
-    { label: '近期', maxYears: 3, weights: [0.90, 0.05, 0.025, 0.025] },
-    { label: '中期', maxYears: 7, weights: [0.70, 0.20, 0.05, 0.05] },
-    { label: '远期', maxYears: 10, weights: [0.50, 0.35, 0.075, 0.075] },
-    { label: '超远期', maxYears: 99, weights: [0.35, 0.50, 0.075, 0.075] }
+    { label: '近期 / Near', maxYears: 3, weights: [0.90, 0.05, 0.025, 0.025] },
+    { label: '中期 / Mid', maxYears: 7, weights: [0.70, 0.20, 0.05, 0.05] },
+    { label: '远期 / Long', maxYears: 10, weights: [0.50, 0.35, 0.075, 0.075] },
+    { label: '超远期 / Ultra-long', maxYears: 99, weights: [0.35, 0.50, 0.075, 0.075] }
   ],
   balanced: [
-    { label: '近期', maxYears: 3, weights: [0.875, 0.05, 0.025, 0.05] },
-    { label: '中期', maxYears: 7, weights: [0.60, 0.30, 0.075, 0.075] },
-    { label: '远期', maxYears: 10, weights: [0.40, 0.45, 0.10, 0.10] },
-    { label: '超远期', maxYears: 99, weights: [0.225, 0.575, 0.075, 0.125] }
+    { label: '近期 / Near', maxYears: 3, weights: [0.875, 0.05, 0.025, 0.05] },
+    { label: '中期 / Mid', maxYears: 7, weights: [0.60, 0.30, 0.075, 0.075] },
+    { label: '远期 / Long', maxYears: 10, weights: [0.40, 0.45, 0.10, 0.10] },
+    { label: '超远期 / Ultra-long', maxYears: 99, weights: [0.225, 0.575, 0.075, 0.125] }
   ],
   aggressive: [
-    { label: '近期', maxYears: 3, weights: [0.85, 0.08, 0.02, 0.05] },
-    { label: '中期', maxYears: 7, weights: [0.50, 0.40, 0.05, 0.05] },
-    { label: '远期', maxYears: 10, weights: [0.30, 0.55, 0.075, 0.075] },
-    { label: '超远期', maxYears: 99, weights: [0.15, 0.70, 0.075, 0.075] }
+    { label: '近期 / Near', maxYears: 3, weights: [0.85, 0.08, 0.02, 0.05] },
+    { label: '中期 / Mid', maxYears: 7, weights: [0.50, 0.40, 0.05, 0.05] },
+    { label: '远期 / Long', maxYears: 10, weights: [0.30, 0.55, 0.075, 0.075] },
+    { label: '超远期 / Ultra-long', maxYears: 99, weights: [0.15, 0.70, 0.075, 0.075] }
   ]
 };
 
@@ -164,10 +164,10 @@ function renderRiskTemplateSummaries() {
     var template = RISK_PHASE_TEMPLATES[key];
     host.innerHTML = template.map(function(item) {
       return item.label + '≤' + item.maxYears + '年: '
-        + '固收' + formatPct(item.weights[0]) + ' / '
-        + '权益' + formatPct(item.weights[1]) + ' / '
-        + '保险' + formatPct(item.weights[2]) + ' / '
-        + '另类' + formatPct(item.weights[3]);
+        + '固收/FI ' + formatPct(item.weights[0]) + ' / '
+        + '权益/EQ ' + formatPct(item.weights[1]) + ' / '
+        + '保险/INS ' + formatPct(item.weights[2]) + ' / '
+        + '另类/ALT ' + formatPct(item.weights[3]);
     }).join('<br>');
   });
 }
@@ -208,21 +208,21 @@ function updatePhaseSyncStatus() {
   var riskEl = document.getElementById('risk-tolerance');
   if (!statusEl || !riskEl) return;
   var riskLabelMap = {
-    conservative: '保守',
-    balanced: '平衡',
-    aggressive: '进取'
+    conservative: '保守 / Conservative',
+    balanced: '平衡 / Balanced',
+    aggressive: '进取 / Aggressive'
   };
   if (!riskEl.value) {
-    statusEl.textContent = '当前未绑定风险偏好模板。';
+    statusEl.textContent = '当前未绑定风险偏好模板 / No risk template is currently linked.';
     if (resetBtn) resetBtn.disabled = true;
     return;
   }
   if (_phaseWeightsManuallyEdited) {
-    statusEl.textContent = '第 8 部分的阶段权重已手动修改，当前不再自动跟随“' + riskLabelMap[riskEl.value] + '”模板。';
+    statusEl.textContent = '第 8 部分的阶段权重已手动修改，当前不再自动跟随“' + riskLabelMap[riskEl.value] + '”模板 / Section 8 has been edited manually, so it no longer auto-follows the "' + riskLabelMap[riskEl.value] + '" template.';
     if (resetBtn) resetBtn.disabled = false;
     return;
   }
-  statusEl.textContent = '第 8 部分的阶段权重当前跟随“' + riskLabelMap[riskEl.value] + '”模板。';
+  statusEl.textContent = '第 8 部分的阶段权重当前跟随“' + riskLabelMap[riskEl.value] + '”模板 / Section 8 is currently following the "' + riskLabelMap[riskEl.value] + '" template.';
   if (resetBtn) resetBtn.disabled = false;
 }
 
@@ -384,12 +384,12 @@ function syncSavingsDropdown() {
     if (year) label += ' (' + year + '年)';
     options.push({ value: id, label: label });
   });
-  options.push({ value: '富余资金', label: '富余资金' });
+  options.push({ value: '富余资金', label: '富余资金 / Surplus Account' });
 
   document.querySelectorAll('#savings-tbody .sav-linked').forEach(function(sel) {
     var current = sel.value;
     sel.innerHTML = '';
-    sel.appendChild(new Option('— 请选择 —', ''));
+    sel.appendChild(new Option('— 请选择 / Select —', ''));
     options.forEach(function(opt) {
       sel.appendChild(new Option(opt.label, opt.value));
     });
@@ -436,14 +436,14 @@ function syncIncomeRows() {
     'member-annuity'
   ]);
   var html = '<table class="form-table income-table">';
-  html += '<tr><th class="align-left">成员</th><th>当前年收入(元)</th><th>开始收入年龄</th><th>未来年收入(元)</th><th>退休养老金(月)</th><th>退休年金(月)</th></tr>';
+  html += '<tr><th class="align-left">成员 / Member</th><th>当前年收入(元) / Current annual income</th><th>开始收入年龄 / Income start age</th><th>未来年收入(元) / Future annual income</th><th>退休养老金(月) / Pension</th><th>退休年金(月) / Annuity</th></tr>';
   members.forEach(function(member, idx) {
     var old = existing[idx] || {};
     html += '<tr class="income-row">';
     html += '<td class="align-left"><strong>' + member.name + '</strong></td>';
     html += '<td><input type="number" class="member-current-income table-input-md" value="' + (old['member-current-income'] || '') + '" min="0" step="1000"></td>';
-    html += '<td><input type="number" class="member-income-start-age table-input-sm" value="' + (old['member-income-start-age'] || '') + '" min="0" max="99" placeholder="如 22"></td>';
-    html += '<td><input type="number" class="member-income-start-annual table-input-md" value="' + (old['member-income-start-annual'] || '') + '" min="0" step="1000" placeholder="未成年人/待就业成员可填"></td>';
+    html += '<td><input type="number" class="member-income-start-age table-input-sm" value="' + (old['member-income-start-age'] || '') + '" min="0" max="99" placeholder="如 / e.g. 22"></td>';
+    html += '<td><input type="number" class="member-income-start-annual table-input-md" value="' + (old['member-income-start-annual'] || '') + '" min="0" step="1000" placeholder="未成年人/待就业成员可填 / optional for minors or not-yet-working members"></td>';
     html += '<td><input type="number" class="member-pension table-input-md" value="' + (old['member-pension'] || '') + '" min="0" step="100"></td>';
     html += '<td><input type="number" class="member-annuity table-input-md" value="' + (old['member-annuity'] || '') + '" min="0" step="100"></td>';
     html += '</tr>';
@@ -461,7 +461,7 @@ function syncExpenseRows() {
     'member-retire-coeff'
   ]);
   var html = '<table class="form-table expense-table">';
-  html += '<tr><th class="align-left">成员</th><th>当前月支出(元)</th><th>退休后支出系数</th></tr>';
+  html += '<tr><th class="align-left">成员 / Member</th><th>当前月支出(元) / Current monthly spending</th><th>退休后支出系数 / Retirement factor</th></tr>';
   members.forEach(function(member, idx) {
     var old = existing[idx] || {};
     html += '<tr class="expense-row">';
@@ -489,12 +489,12 @@ function syncInsuranceRows() {
     'ins-hc-cap'
   ]);
   var html = '<table class="form-table ins-table">';
-  html += '<tr><th class="align-left">成员</th><th>医保</th><th>定寿保额(元)</th><th>高端医疗险保额(元)</th><th>重疾险保额(元)</th><th>报销比例</th><th>退休医疗年支出(元)</th><th>年增长率</th><th>年度封顶(元)</th></tr>';
+  html += '<tr><th class="align-left">成员 / Member</th><th>医保 / Public medical</th><th>定寿保额(元) / Term life</th><th>高端医疗险保额(元) / High-end medical</th><th>重疾险保额(元) / Critical illness</th><th>报销比例 / Reimbursement</th><th>退休医疗年支出(元) / Retirement healthcare</th><th>年增长率 / Growth</th><th>年度封顶(元) / Annual cap</th></tr>';
   members.forEach(function(member, idx) {
     var old = existing[idx] || {};
     html += '<tr class="ins-row">';
     html += '<td class="align-left"><strong>' + member.name + '</strong></td>';
-    html += '<td><select class="ins-medical table-input-sm"><option value="">—</option><option value="true"' + (old['ins-medical'] === 'true' ? ' selected' : '') + '>有</option><option value="false"' + (old['ins-medical'] === 'false' ? ' selected' : '') + '>无</option></select></td>';
+    html += '<td><select class="ins-medical table-input-sm"><option value="">—</option><option value="true"' + (old['ins-medical'] === 'true' ? ' selected' : '') + '>有 / Yes</option><option value="false"' + (old['ins-medical'] === 'false' ? ' selected' : '') + '>无 / No</option></select></td>';
     html += '<td><input type="number" class="ins-term-cov table-input-md" value="' + (old['ins-term-cov'] || '') + '" min="0"></td>';
     html += '<td><input type="number" class="ins-hci-cov table-input-md" value="' + (old['ins-hci-cov'] || '') + '" min="0"></td>';
     html += '<td><input type="number" class="ins-ci-cov table-input-md" value="' + (old['ins-ci-cov'] || '') + '" min="0"></td>';
@@ -581,9 +581,9 @@ function updateMeasurementEndYearConstraints() {
   }
 
   if (lastEventYear !== null) {
-    endYearEl.title = '不能早于重大支出规划中的最后一个年份（' + lastEventYear + '）';
+    endYearEl.title = '不能早于重大支出规划中的最后一个年份（' + lastEventYear + '） / Cannot be earlier than the last major spending year.';
   } else {
-    endYearEl.title = '默认当前年份 + 30 年，可按需要调整';
+    endYearEl.title = '默认当前年份 + 30 年，可按需要调整 / Defaults to current year + 30 and can be changed.';
   }
 }
 
@@ -596,11 +596,11 @@ function validateMeasurementEndYear() {
   var endYear = numVal(endYearEl);
   var minYear = Number(endYearEl.min || '0');
   if (endYear === null) {
-    endYearEl.setCustomValidity('请填写测算截止年份');
+    endYearEl.setCustomValidity('请填写测算截止年份 / Please enter the projection end year.');
     return false;
   }
   if (endYear < minYear) {
-    endYearEl.setCustomValidity('测算截止年份不能早于重大支出规划中的最后一个年份');
+    endYearEl.setCustomValidity('测算截止年份不能早于重大支出规划中的最后一个年份 / Projection end year cannot be earlier than the last major spending year.');
     return false;
   }
   endYearEl.setCustomValidity('');
@@ -1062,14 +1062,14 @@ function autoPrefillSample() {
 function loadSampleData() {
   var el = document.getElementById('sample-data');
   if (!el || !el.textContent) {
-    alert('无示例数据');
+    alert('无示例数据 / No sample data');
     return;
   }
   try {
     var data = JSON.parse(el.textContent);
     if (data && Object.keys(data).length > 0) restoreFormFromData(data);
   } catch (err) {
-    alert('解析示例数据失败');
+    alert('解析示例数据失败 / Failed to parse sample data');
   }
 }
 

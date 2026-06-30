@@ -1,28 +1,28 @@
 {% extends "base.html" %}
-{% block title %}FAPM — 首页{% endblock %}
+{% block title %}FAPM — 首页 / Home{% endblock %}
 {% block content %}
-<h2>家庭资产配置剧本方法论 (FAPM)</h2>
+<h2>家庭资产配置剧本方法论 / Family Asset Playbook Method (FAPM)</h2>
 
-<p>FAPM 是一套面向家庭客户的资产配置规划方法论。核心交付物是一份<strong>可塑性的 high-level 方案骨架</strong>。</p>
+<p>FAPM 是一套面向家庭客户的资产配置规划方法论 / FAPM is a family asset planning workflow. 核心交付物是一份<strong>可塑性的 high-level 方案骨架 / a flexible high-level planning playbook</strong>。</p>
 
 {% if not storage_enabled %}
-<div class="success-banner">当前为公开演示模式：网页不会把匿名访客填写的客户信息保存到服务器，也不展示其他人的已填资料。</div>
+<div class="success-banner">当前为公开演示模式：网页不会把匿名访客填写的客户信息保存到服务器，也不展示其他人的已填资料 / Public demo mode: anonymous visitor data is not saved on the server and other visitors' submissions are not shown.</div>
 {% endif %}
 
 {% if storage_enabled %}
-<h3>客户列表</h3>
+<h3>客户列表 / Client List</h3>
 
 <table class="client-table">
   <thead>
     <tr>
-      <th>客户代码</th>
-      <th>客户姓名</th>
-      <th>问卷</th>
-      <th>剧本</th>
-      <th>标签1</th>
-      <th>标签2</th>
-      <th>备注</th>
-      <th>操作</th>
+      <th>客户代码 / Code</th>
+      <th>客户姓名 / Name</th>
+      <th>问卷 / Questionnaire</th>
+      <th>剧本 / Playbook</th>
+      <th>标签1 / Tag 1</th>
+      <th>标签2 / Tag 2</th>
+      <th>备注 / Notes</th>
+      <th>操作 / Action</th>
     </tr>
   </thead>
   <tbody>
@@ -30,33 +30,33 @@
     <tr>
       <td class="code">{{ c.code }}</td>
       <td>{{ c.name }}</td>
-      <td><a href="/questionnaire/load/{{ c.code }}" class="link-action">编辑问卷</a></td>
-      <td><a href="/playbook/{{ c.code }}" class="link-action">查看剧本</a></td>
+      <td><a href="/questionnaire/load/{{ c.code }}" class="link-action">编辑问卷 / Edit</a></td>
+      <td><a href="/playbook/{{ c.code }}" class="link-action">查看剧本 / View</a></td>
       <form method="post" action="/clients/update" class="inline-form">
         <input type="hidden" name="code" value="{{ c.code }}">
         <td><input type="text" name="tag1" value="{{ c.tags[0] }}" class="tag-input" placeholder="—"></td>
         <td><input type="text" name="tag2" value="{{ c.tags[1] }}" class="tag-input" placeholder="—"></td>
-        <td><input type="text" name="notes" value="{{ c.notes }}" class="notes-input" placeholder="顾问备注"></td>
-        <td><button type="submit" class="btn-small">保存</button></td>
+        <td><input type="text" name="notes" value="{{ c.notes }}" class="notes-input" placeholder="顾问备注 / Advisor notes"></td>
+        <td><button type="submit" class="btn-small">保存 / Save</button></td>
       </form>
     </tr>
     {% else %}
     <tr>
-      <td colspan="8" class="empty">暂无客户。填写 <a href="/questionnaire">新问卷</a> 创建第一个客户。</td>
+      <td colspan="8" class="empty">暂无客户 / No clients yet。填写 <a href="/questionnaire">新问卷 / new questionnaire</a> 创建第一个客户。</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% endif %}
 
-<h3>快速入口</h3>
+<h3>快速入口 / Quick Access</h3>
 <ul>
-  <li><a href="/questionnaire">📝 新建问卷</a></li>
-  <li><a href="/questionnaire/sample-wang">📝 已有问卷：王先生示例</a></li>
+  <li><a href="/questionnaire">📝 新建问卷 / New Questionnaire</a></li>
+  <li><a href="/questionnaire/sample-wang">📝 已有问卷：王先生示例 / Sample: Mr. Wang</a></li>
 </ul>
 
-<h3>重要声明</h3>
-<p>本方法论<strong>不构成投资建议</strong>。所有数值均为占位默认值，实际配置需结合客户具体情况与专业人士意见。</p>
+<h3>重要声明 / Important Notice</h3>
+<p>本方法论<strong>不构成投资建议</strong> / This methodology is <strong>not investment advice</strong>。所有数值均为占位默认值，实际配置需结合客户具体情况与专业人士意见 / All figures are illustrative and need case-by-case professional review.</p>
 
 <style>
 .client-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
