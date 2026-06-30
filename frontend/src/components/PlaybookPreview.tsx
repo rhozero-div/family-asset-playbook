@@ -25,14 +25,14 @@ export default function PlaybookPreview() {
       <div className="panel-head">
         <div>
           <div className="section-tag">Simulated Playbook</div>
-          <h2>剧本页突出“结论先行 + 执行动作”</h2>
+          <h2>The playbook leads with conclusions and execution actions</h2>
         </div>
       </div>
 
       <div className="playbook-preview">
         <article className="summary-card">
-          <div className="summary-topline">综合建议摘要</div>
-          <h3>重大节点整体可覆盖，关键动作在购房前 3 年的流动性调度。</h3>
+          <div className="summary-topline">Executive Summary</div>
+          <h3>Major milestones remain coverable overall, and the key action is liquidity discipline in the three years before the housing event.</h3>
           <ul>
             {summaryBullets.map((bullet) => (
               <li key={bullet}>{bullet}</li>
@@ -42,7 +42,7 @@ export default function PlaybookPreview() {
 
         <div className="preview-grid">
           <article className="paper-card">
-            <h3>C1. 初始存量资金分配</h3>
+            <h3>C1. Initial Capital Allocation</h3>
             <div className="bucket-list">
               {bucketRows.map((row) => (
                 <div className="bucket-row" key={row.name}>
@@ -51,7 +51,7 @@ export default function PlaybookPreview() {
                     <strong>{row.amount}</strong>
                   </div>
                   <div className="bucket-bar">
-                    <span style={{ width: row.name === "购房账户" ? "72%" : row.name === "富余资金" ? "48%" : "36%", background: row.color }} />
+                    <span style={{ width: row.name === "Housing Bucket" ? "72%" : row.name === "Surplus Account" ? "48%" : "36%", background: row.color }} />
                   </div>
                 </div>
               ))}
@@ -59,7 +59,7 @@ export default function PlaybookPreview() {
           </article>
 
           <article className="paper-card">
-            <h3>B. 现金流与资产余额时序</h3>
+            <h3>B. Cash Flow and Asset Balance Timeline</h3>
             <div className="chart-card">
               <svg viewBox="0 0 100 64" className="fan-chart" aria-hidden="true">
                 <polygon

@@ -1,9 +1,9 @@
-# 家庭资产配置剧本方法论 v0.1 — 示例客户档案
-# 仅供方法论演示,所有数据均为虚构
+# Family Asset Playbook v0.1 - sample client profile
+# For methodology demonstration only; all data is fictional
 profile_version: "0.1"
 schema_version: "handbook-v0.1"
 
-# === 1. 家庭情况 ===
+# === 1. Household ===
 family:
   members:
     - name: "王先生"
@@ -83,7 +83,7 @@ family:
       age: 68
       health: "fair"
 
-# === 2. 收入情况及预期 ===
+# === 2. Income and Expectations ===
 income:
   sources:
     - type: "salary"
@@ -96,15 +96,15 @@ income:
       stability: "stable"
   expectations:
     horizon_years: 10
-    annual_growth_rate: 0.04       # 4% 年化
+    annual_growth_rate: 0.04       # 4% annualized
     confidence: "medium"           # low / medium / high
-  monthly_living_expense: 25000    # 家庭月度生活支出(不含房贷)
+  monthly_living_expense: 25000    # monthly household spending excluding mortgage
   retirement:
-    monthly_pension: 5000          # 社保退休金
-    monthly_annuity: 3000          # 商业年金
-    monthly_expense: 15000         # 退休后月支出
+    monthly_pension: 5000          # public pension
+    monthly_annuity: 3000          # commercial annuity
+    monthly_expense: 15000         # monthly spending after retirement
 
-# === 3. 支持情况及预期 ===
+# === 3. Support and Expectations ===
 support:
   inheritance_expected:
     - from: "王父"
@@ -119,7 +119,7 @@ support:
       timing_year: 2035
       estimated_range: [1500000, 2500000]
 
-# === 4. 重要家庭规划(事件节点) ===
+# === 4. Major Family Planning Events ===
 events:
   - id: "buy_improvement_house"
     type: "housing"
@@ -159,13 +159,13 @@ events:
     expected_replacement_ratio: 0.6
     certainty: "medium"
 
-# === 5. 客户目标(选填,未填时由 risk_tolerance 推导) ===
+# === 5. Client Goals (optional; inferred from risk_tolerance if omitted) ===
 objectives:
-  target_annual_return: 0.06       # 期望年化收益率 6%
-  investment_horizon: 15           # 投资视野 15 年
-  max_drawdown_tolerance: 0.20     # 最大回撤容忍 20%
+  target_annual_return: 0.06       # target annualized return 6%
+  investment_horizon: 15           # 15-year investment horizon
+  max_drawdown_tolerance: 0.20     # maximum drawdown tolerance 20%
 
-# === 6. 现有资产 ===
+# === 6. Current Assets ===
 assets:
   real_estate:
     primary_residence:
@@ -182,24 +182,24 @@ assets:
       total_value: 100000
       breakdown_hint: "黄金 ETF"
     insurance:
-      term_life_coverage: 0                # 定期寿险保额
-      term_life_premium: 0                 # 定期寿险年缴保费
-      critical_illness_coverage: 500000    # 重疾险保额
-      critical_illness_premium: 0          # 重疾险年缴保费(已缴清)
-      medical_covered: false               # 是否配置医疗险
+      term_life_coverage: 0                # term life coverage
+      term_life_premium: 0                 # annual premium for term life
+      critical_illness_coverage: 500000    # critical illness coverage
+      critical_illness_premium: 0          # annual premium for critical illness coverage (already paid up)
+      medical_covered: false               # whether medical insurance is in place
       medical_premium: 0
-      savings_value: 200000                # 储蓄型保险现金价值(终身寿)
-      savings_premium: 0                   # 储蓄险年缴保费(已缴清)
+      savings_value: 200000                # cash value of savings-style insurance
+      savings_premium: 0                   # annual premium for savings insurance (already paid up)
       breakdown_hint: "重疾险(已缴清) + 终身寿(已缴清)"
-  overseas_module_enabled: false     # 启用条件:见 handbook/01-input-schema.md
-  liquidity_reserve_months: 6        # 当前流动性可支撑月数
+  overseas_module_enabled: false     # see handbook/01-input-schema.md for enablement context
+  liquidity_reserve_months: 6        # current liquidity runway in months
   liabilities:
     - type: "mortgage"
       outstanding: 1500000
       monthly_payment: 18000
       remaining_years: 12
 
-# === 顾问评估(可选,人工补全) ===
+# === Advisor Assessment (optional, completed manually) ===
 advisor_assessment:
   risk_tolerance: "balanced"        # conservative / balanced / aggressive
   knowledge_level: "medium"         # low / medium / high

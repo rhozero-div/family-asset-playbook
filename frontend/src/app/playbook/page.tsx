@@ -3,7 +3,7 @@ import PlaybookPreview from "@/components/PlaybookPreview";
 
 export default function PlaybookPage() {
   return (
-    <AppShell eyebrow="Demo Route /playbook" title="客户剧本页演示">
+    <AppShell eyebrow="Demo Route /playbook" title="Client Playbook Demo">
       <PlaybookPreview />
     </AppShell>
   );

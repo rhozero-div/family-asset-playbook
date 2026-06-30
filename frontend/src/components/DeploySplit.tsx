@@ -5,24 +5,22 @@ export default function DeploySplit() {
     <section className="panel split-grid">
       <div className="split-card">
         <div className="badge">Cloudflare Pages</div>
-        <h3>静态演示前端</h3>
+        <h3>Static Demo Frontend</h3>
         <p>
-          使用 Next.js 静态导出生成 `out/`，适合放一个公开可浏览的模拟网页，
-          用来展示问卷结构、剧本阅读路径和产品调性。
+          Built with Next.js static export into `out/`, this side is suited for a public-facing mock page that shows the questionnaire structure, playbook reading flow, and product tone.
         </p>
         <a href={deployLinks.cloudflare} className="inline-link">
-          Pages 演示地址
+          Pages demo URL
         </a>
       </div>
       <div className="split-card">
         <div className="badge">Hugging Face Spaces</div>
-        <h3>FastAPI 真正演示入口</h3>
+        <h3>Real FastAPI Demo Entry</h3>
         <p>
-          复用现有 `web.app:app`，通过 Docker 在 HF 上跑起来，保留问卷保存、
-          生成剧本和客户列表的真实流程。
+          Reuses the current `web.app:app` and runs it through Docker on HF, preserving the real workflow for saving questionnaires, generating playbooks, and browsing the client list.
         </p>
         <a href={deployLinks.huggingFace} className="inline-link">
-          Spaces 演示地址
+          Spaces demo URL
         </a>
       </div>
     </section>

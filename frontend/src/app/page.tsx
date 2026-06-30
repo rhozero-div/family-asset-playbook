@@ -6,20 +6,21 @@ import { deployLinks } from "@/lib/demo-data";
 
 export default function HomePage() {
   return (
-    <AppShell eyebrow="Cloudflare + Hugging Face Split" title="把家庭资产剧本做成一套可公开演示的双入口">
+    <AppShell eyebrow="Cloudflare + Hugging Face Split" title="A public two-entry demo for the Family Asset Playbook">
       <section className="masthead panel">
         <div className="masthead-copy">
           <p>
-            这一版不是把现有站点硬塞进单个平台，而是沿用
-            `asset-correlation-monitor` 的拆分方式：Cloudflare Pages
-            负责公开演示壳，Hugging Face Spaces Docker 负责真正的 FastAPI Web 入口。
+            This version does not force the whole product into a single platform.
+            It follows the same split-deployment idea used in
+            `asset-correlation-monitor`: Cloudflare Pages handles the public-facing
+            demo shell, while Hugging Face Spaces runs the real FastAPI web entry.
           </p>
           <div className="cta-row">
             <a href={deployLinks.cloudflare} className="cta-primary">
-              打开 Cloudflare 演示
+              Open Cloudflare Demo
             </a>
             <a href={deployLinks.huggingFace} className="cta-secondary">
-              打开 Hugging Face 应用
+              Open Hugging Face App
             </a>
           </div>
         </div>
@@ -27,12 +28,12 @@ export default function HomePage() {
           <div className="route-card">
             <span>Pages</span>
             <strong>/</strong>
-            <em>对外展示产品结构、问卷逻辑与剧本阅读体验</em>
+            <em>Public demo of product structure, questionnaire logic, and playbook reading flow</em>
           </div>
           <div className="route-card">
             <span>Spaces</span>
             <strong>/questionnaire</strong>
-            <em>真正可填写、可保存、可生成剧本的 Web 入口</em>
+            <em>The real web entry for filling, saving, and generating playbooks</em>
           </div>
         </div>
       </section>
