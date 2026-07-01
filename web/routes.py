@@ -238,7 +238,7 @@ async def questionnaire_generate(
     code = client_code if server_storage_enabled() else ""
     if server_storage_enabled() and not code:
         from web.yaml_handler import _resolve_code
-        code = _resolve_code(yaml_text, "", PROFILES_DIR)
+        code = _resolve_code(yaml_text, "", storage_dir())
     name = _family_name(yaml_text)
 
     playbook_html = render_markdown(playbook_md)
@@ -262,7 +262,7 @@ async def questionnaire_generate(
 async def playbook_view(request: Request, code: str):
     if not server_storage_enabled():
         raise HTTPException(status_code=404, detail="演示模式不开放已保存剧本")
-    profile_path = PROFILES_DIR / f"{code}.yaml"
+    profile_path = storage_dir() / f"{code}.yaml"
     if not profile_path.exists():
         raise HTTPException(status_code=404, detail=f"未找到档案: {code}")
     yaml_text = profile_path.read_text(encoding="utf-8")
