@@ -68,7 +68,10 @@ class TestRenderPlaybook(unittest.TestCase):
     def test_renders_metadata(self):
         md = _render(bucket_result=None)
         self.assertIn("王先生", md)
-        self.assertIn("handbook-v0.1", md)
+        self.assertIn("风险偏好", md)
+        self.assertIn("平衡", md)
+        self.assertNotIn("方法论版本", md)
+        self.assertNotIn("handbook-v0.1", md)
         self.assertIn("不构成投资建议", md)
 
     def test_renders_all_sections(self):

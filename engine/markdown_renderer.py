@@ -26,6 +26,12 @@ _DRAWDOWN_CAPS = {
     "aggressive": "40%",
 }
 
+_RISK_PREFERENCE_LABELS = {
+    "conservative": ("保守", "Conservative"),
+    "balanced": ("平衡", "Balanced"),
+    "aggressive": ("进取", "Aggressive"),
+}
+
 _ACTIVE_LANG = "zh"
 _EN_TEXT_MAP = {
     "王先生": "Mr. Wang",
@@ -113,6 +119,11 @@ def _join_items(items: list[str]) -> str:
 
 def _format_pct(x: float) -> str:
     return f"{x * 100:.1f}%"
+
+
+def _display_risk_preference(value: str) -> str:
+    zh, en = _RISK_PREFERENCE_LABELS.get(value, (value, value))
+    return en if _ACTIVE_LANG == "en" else zh
 
 
 def _regular_net_by_year(
@@ -817,12 +828,10 @@ def _headline_conclusion_lines(
 
 def _render_metadata(profile: ClientProfile) -> str:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    semver = profile.schema_version.replace("handbook-v", "")
     return (
         f"# {_en_text(profile.family_name)} {_bi('家庭资产配置剧本', 'Family Asset Playbook')}\n\n"
         f"**{_bi('生成时间', 'Generated at')}:** {timestamp} | "
-        f"**{_bi('方法论版本', 'Method version')}:** handbook-v{semver} | "
-        f"**{_bi('风险偏好', 'Risk preference')}:** {profile.risk_preference}\n\n"
+        f"**{_bi('风险偏好', 'Risk preference')}:** {_display_risk_preference(profile.risk_preference)}\n\n"
         f"> {_bi('本剧本用于家庭资产规划沟通，不构成投资建议。所有数值基于方法论假设，实际配置仍需结合专业人士意见。', 'This playbook is for family asset planning discussion only and does not constitute investment advice. All figures are assumption-based and should be reviewed with a qualified professional before execution.')}\n\n"
     )
 
