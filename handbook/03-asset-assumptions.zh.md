@@ -34,7 +34,7 @@ English version: [03-asset-assumptions.md](03-asset-assumptions.md)
 | 保险 / 储蓄险 | `insurance` | 保障相关资本与长期锁定资金 |
 | 另类 | `alternatives` | 分散化和非核心暴露 |
 
-海外镜像在概念上仍留有空间，但当前主线仍以这四类为核心。
+当前主线就以这四类核心资产为基础。
 
 ## 3. 当前默认占位假设
 

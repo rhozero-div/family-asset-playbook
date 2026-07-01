@@ -191,7 +191,6 @@ assets:
       savings_value: 200000                # cash value of savings-style insurance
       savings_premium: 0                   # annual premium for savings insurance (already paid up)
       breakdown_hint: "重疾险(已缴清) + 终身寿(已缴清)"
-  overseas_module_enabled: false     # see handbook/01-input-schema.md for enablement context
   liquidity_reserve_months: 6        # current liquidity runway in months
   liabilities:
     - type: "mortgage"

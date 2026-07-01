@@ -63,7 +63,7 @@ class TestReadAssumptions(unittest.TestCase):
             f.write(
                 "# Test\n\n"
                 "## 1. intro\n\n"
-                "### 3.1 境内 4 大类\n\n"
+                "### 3.1 4 大类\n\n"
                 "| 大类 | 预期年化收益率 | 年化波动率 | 数据源 |\n"
                 "|---|---|---|---|\n"
                 "| 固收 | **3.0%** | **2%** | test |\n"

@@ -850,7 +850,7 @@ def _render_section_a(profile: ClientProfile) -> str:
     parts.append(f"### A1. {_bi('初始资产与收支状态', 'Starting Assets and Cash Flow')}\n\n")
     parts.append(f"| {_bi('项目', 'Item')} | {_bi('金额', 'Amount')} |\n|---|---|\n")
     parts.append(f"| {_bi('房产估值', 'Real estate value')} | {_fmt(profile.total_real_estate_value)} |\n")
-    parts.append(f"| {_bi('金融资产(境内+海外)', 'Financial assets (onshore + offshore)')} | {_fmt(profile.total_financial_assets)} |\n")
+    parts.append(f"| {_bi('金融资产', 'Financial assets')} | {_fmt(profile.total_financial_assets)} |\n")
     parts.append(f"| {_bi('负债余额', 'Outstanding debt')} | {_fmt(profile.total_outstanding_debt)} |\n")
     parts.append(f"| **{_bi('家庭净资产', 'Household net worth')}** | **{_fmt(net_worth)}** |\n\n")
 

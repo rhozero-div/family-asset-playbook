@@ -174,15 +174,6 @@ def _validate(data: dict, path: Path) -> tuple[bool, list[str]]:
     # assets
     assets = data.get("assets", {})
     if isinstance(assets, dict):
-        overseas = assets.get("overseas_module_enabled")
-        if overseas is not None and not isinstance(overseas, bool):
-            errors.append(
-                f"assets.overseas_module_enabled 应为 bool,实际 {type(overseas).__name__}"
-            )
-        if overseas is True and "overseas" not in assets:
-            errors.append(
-                "assets.overseas_module_enabled=true 但缺 assets.overseas 字段"
-            )
         # 保险子字段校验
         for loc, ins_data in _iter_insurance(assets):
             _validate_insurance(ins_data, loc, errors)
@@ -206,14 +197,11 @@ def _validate(data: dict, path: Path) -> tuple[bool, list[str]]:
 
 
 def _iter_insurance(assets: dict) -> list[tuple[str, dict]]:
-    """遍历境内+海外保险数据,返回 [(位置标签, 保险字典)]。"""
+    """遍历当前资产结构中的保险数据,返回 [(位置标签, 保险字典)]。"""
     results = []
     fin = assets.get("financial", {})
     if isinstance(fin, dict) and isinstance(fin.get("insurance"), dict):
         results.append(("assets.financial.insurance", fin["insurance"]))
-    ov = assets.get("overseas", {})
-    if isinstance(ov, dict) and isinstance(ov.get("insurance"), dict):
-        results.append(("assets.overseas.insurance", ov["insurance"]))
     return results
 
 

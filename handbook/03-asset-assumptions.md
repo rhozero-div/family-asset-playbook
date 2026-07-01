@@ -31,7 +31,7 @@ The methodology currently works with four main classes:
 | Insurance / savings insurance | `insurance` | protection-related capital and long-duration reserve behavior |
 | Alternatives | `alternatives` | diversification and non-core exposure |
 
-The repo also preserves conceptual room for overseas mirrors, but the current mainline is still built around the four-class domestic core.
+The current mainline is built around these four core asset classes.
 
 ## 3. Current Default Placeholder Assumptions
 

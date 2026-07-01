@@ -354,9 +354,9 @@ body {
   border-bottom: 1px solid #e2e8f0;
 }
 
-/* 海外模块 */
-.overseas-section { display: none; }
-.overseas-section.visible { display: block; }
+/* 条件显示区块 */
+.conditional-section { display: none; }
+.conditional-section.visible { display: block; }
 .ci-sub-fields { display: none; }
 .ci-sub-fields.visible { display: block; }
 

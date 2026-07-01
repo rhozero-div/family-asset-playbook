@@ -191,7 +191,6 @@ assets:
     alternatives:
       total_value: 100000
       breakdown_hint: "黄金 ETF"
-  overseas_module_enabled: false     # see handbook/01-input-schema.md for enablement context
   liquidity_reserve_months: 6        # current liquidity runway in months
   liabilities:
     - type: "mortgage"

@@ -115,7 +115,44 @@ A practical interpretation:
 
 These are **distribution summaries**, not promises and not hard boundaries.
 
-## 4. Why We Use QMC
+## 4. Why a Bucket Can Still Receive Contributions Even When the Chart Looks Fully Funded
+
+This is one of the easiest points to misread in the current system.
+
+The `p50` or middle-outcome balance shown in the chart is a **display result**, not the switch that tells the engine to stop contributing.
+
+It helps to separate two layers:
+
+1. The chart-level `p50` only shows the middle outcome  
+   It means that on the middle path, the bucket may already be at or above its target at that year end.  
+   It does **not** mean that every plausible path is already fully funded.
+
+2. The funding rule is not “stop as soon as `p50` is full”  
+   The engine continues to look at the remaining gap on each path, together with the remaining years before the event, and keeps filling that gap gradually.  
+   So even if the visible middle outcome already looks fully funded, weaker paths may still be short, and the bucket can still receive some contribution.
+
+3. Contributions usually shrink as the bucket gets closer to target  
+   The current rule does not keep adding money blindly.  
+   It works more like “remaining gap divided across remaining years,” so contributions often taper down instead of dropping to zero immediately.
+
+4. The current model does not lock in excess return before the event year  
+   Until the event year arrives, both principal and investment return continue to stay inside that bucket and keep rolling forward.  
+   The default rule is to withdraw at the end of the event year, not to automatically sweep out excess gains early.
+
+So if a chart shows “the middle outcome already looks fully funded or even overfunded, but the bucket is still receiving some contribution,” that is not necessarily a calculation error.
+
+It reflects the current modeling choice:
+
+- keep the bucket rolling before the event
+- keep filling path-level gaps gradually
+- withdraw only at the event-year end
+
+rather than:
+
+- stop funding as soon as the middle path looks full
+- lock and transfer excess gains immediately
+
+## 5. Why We Use QMC
 
 `QMC` stands for Quasi-Monte Carlo.
 
@@ -131,7 +168,7 @@ What an advisor needs to know:
 - it improves the smoothness and stability of the range estimates
 - it does not remove model risk
 
-## 5. What Actually Drives the Return Projection
+## 6. What Actually Drives the Return Projection
 
 The current return-based projection is driven by four ingredients:
 
@@ -146,7 +183,7 @@ The bucket logic matters because:
 - long-term money can carry more growth exposure
 - the surplus account is treated as long-horizon capital unless a retirement switch changes its stage
 
-## 6. Why Bucket Logic Matters More Than a Single Portfolio Average
+## 7. Why Bucket Logic Matters More Than a Single Portfolio Average
 
 This methodology does not treat the household as one undifferentiated pool of money.
 It separates the household into buckets with different purposes.
@@ -159,7 +196,7 @@ That changes the interpretation materially:
 
 This is one reason the playbook is more readable for family planning than a generic optimizer output.
 
-## 7. Why Event Timing Is End-of-Year
+## 8. Why Event Timing Is End-of-Year
 
 The current system uses an annual, end-of-year convention:
 
@@ -174,7 +211,7 @@ It means:
 - the cash-flow and bucket logic stay aligned
 - the system is not trying to act like a monthly execution planner
 
-## 8. Why the Total Percentile Band Is Not the Sum of Bucket Percentiles
+## 9. Why the Total Percentile Band Is Not the Sum of Bucket Percentiles
 
 This is important.
 
@@ -190,7 +227,7 @@ So if a client asks why the total band does not equal the sum of the visible buc
 
 - because the total band is calculated at the full-portfolio path level, which is the correct statistical treatment
 
-## 9. How To Explain Negative Return Years
+## 10. How To Explain Negative Return Years
 
 In the current playbook, some years in the middle outcome can still show negative investment return.
 
@@ -205,7 +242,7 @@ Good phrasing:
 
 - “This range includes years where market return may be negative, even if the long-run plan still remains workable.”
 
-## 10. What the Charts Do Not Mean
+## 11. What the Charts Do Not Mean
 
 The charts do **not** mean:
 
@@ -217,7 +254,7 @@ The charts do **not** mean:
 
 They are a planning and communication tool under explicit assumptions.
 
-## 11. How Advisors Should Use These Charts
+## 12. How Advisors Should Use These Charts
 
 Recommended advisor posture:
 
@@ -227,7 +264,7 @@ Recommended advisor posture:
 4. Use the return ranges as scenario language, not prediction language
 5. Recalculate when household facts change, not only when markets move
 
-## 12. When To Recalculate Instead of Over-Explaining
+## 13. When To Recalculate Instead of Over-Explaining
 
 If a client changes:
 
@@ -241,7 +278,7 @@ If a client changes:
 
 then recalculation is usually more useful than prolonged interpretation of an outdated chart.
 
-## 13. Relation to the Handbook
+## 14. Relation to the Handbook
 
 These charts sit on top of the current methodology contract:
 
