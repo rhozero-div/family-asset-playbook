@@ -184,8 +184,41 @@ class TestRenderPlaybook(unittest.TestCase):
         html = re.sub(r"<script\b[^>]*>.*?</script>", "", md, flags=re.S | re.I)
         html = re.sub(r"<style\b[^>]*>.*?</style>", "", html, flags=re.S | re.I)
         visible = re.sub(r"<[^>]+>", " ", html)
-        for token in ("应急储备", "富余资金", "近期", "中期", "远期", "超远期"):
+        for token in ("应急储备", "富余资金", "近期", "中期", "远期", "超远期", "王先生", "王太太", "王小朵", "改善型购房"):
             self.assertNotIn(token, visible)
+
+    def test_english_mode_translates_sample_profile_labels(self):
+        profile, projections, plan, terminal, yearly, _, bucket_result = _build(include_bucket_result=True)
+        md = render_playbook(
+            profile=profile,
+            plan=plan,
+            projections=projections,
+            terminal_steps=terminal,
+            yearly_snapshots=yearly,
+            bucket_result=bucket_result,
+            lang="en",
+        )
+        self.assertIn("Mr. Wang Family Asset Playbook", md)
+        self.assertIn("Home upgrade", md)
+        self.assertIn("Mr. Wang retirement", md)
+        self.assertIn("Wang Xiaoduo international high school", md)
+
+    def test_english_mode_chart_json_uses_english_bucket_keys(self):
+        profile, projections, plan, terminal, yearly, _, bucket_result = _build(include_bucket_result=True)
+        md = render_playbook(
+            profile=profile,
+            plan=plan,
+            projections=projections,
+            terminal_steps=terminal,
+            yearly_snapshots=yearly,
+            bucket_result=bucket_result,
+            lang="en",
+        )
+        self.assertIn('"Emergency Reserve"', md)
+        self.assertIn('"Surplus Account"', md)
+        self.assertIn('"Near-term - Home upgrade"', md)
+        for token in ("\"应急储备\"", "\"富余资金\"", "\"近期-改善型购房\""):
+            self.assertNotIn(token, md)
 
     def test_index_template_english_has_no_visible_chinese(self):
         env = Environment(loader=FileSystemLoader(str(TEMPLATE_ROOT)))

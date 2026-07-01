@@ -27,6 +27,18 @@ _DRAWDOWN_CAPS = {
 }
 
 _ACTIVE_LANG = "zh"
+_EN_TEXT_MAP = {
+    "王先生": "Mr. Wang",
+    "王太太": "Mrs. Wang",
+    "王小朵": "Wang Xiaoduo",
+    "王父": "Mr. Wang Sr.",
+    "王先生退休": "Mr. Wang retirement",
+    "改善型购房": "Home upgrade",
+    "王小朵国际高中": "Wang Xiaoduo international high school",
+    "王小朵本科留学": "Wang Xiaoduo overseas undergraduate study",
+    "王小朵成家买房首付帮衬": "Down-payment support for Wang Xiaoduo's future home purchase",
+    "王小朵其他大额支持(婚礼等)": "Other major support for Wang Xiaoduo (wedding, etc.)",
+}
 
 
 def _set_lang(lang: str) -> None:
@@ -67,8 +79,27 @@ def _display_bucket_name(name: str) -> str:
     }
     for prefix, replacement in stage_map.items():
         if name.startswith(prefix):
-            return replacement + name[len(prefix):]
+            return replacement + _en_text(name[len(prefix):])
     return name
+
+
+def _chart_bucket_key(name: str) -> str:
+    """Return the label/key that chart JSON should expose to the frontend."""
+    return _display_bucket_name(name) if _ACTIVE_LANG == "en" else name
+
+
+def _en_text(text: str | None) -> str:
+    if text is None:
+        return ""
+    raw = str(text)
+    if _ACTIVE_LANG != "en":
+        return raw
+    return _EN_TEXT_MAP.get(raw, raw)
+
+
+def _name_amount_items(items: list[tuple[str, float]]) -> str:
+    sep = "; " if _ACTIVE_LANG == "en" else "；"
+    return sep.join(f"{_en_text(name)} {_fmt(value)}" for name, value in items)
 
 
 def _fmt(x: float) -> str:
@@ -150,16 +181,16 @@ def _member_retirement_rollup(profile: ClientProfile) -> dict[str, object]:
     for member in profile.members:
         retirement_income = (member.retirement_pension + member.retirement_annuity)
         if retirement_income > 0:
-            income_items.append((member.name, retirement_income))
+            income_items.append((_en_text(member.name), retirement_income))
 
         retirement_expense = member.monthly_expense * member.retirement_expense_coeff
         if retirement_expense > 0:
-            expense_items.append((member.name, retirement_expense))
+            expense_items.append((_en_text(member.name), retirement_expense))
 
         if member.healthcare_starting_annual > 0:
             healthcare_items.append(
                 (
-                    member.name,
+                    _en_text(member.name),
                     member.healthcare_starting_annual * (1 - member.reimbursement_rate),
                 )
             )
@@ -243,7 +274,7 @@ def _summary_state_lines(
             (
                 f"- 当前阶段属于**目标取舍与预算重排优先**：按现有假设，最早会在 {next_shortfall.year} 年的{next_shortfall.description} 出现约 {_fmt(abs(next_shortfall.gap_or_surplus))} 缺口，说明仅靠现有预算顺序还不够。"
                 if _ACTIVE_LANG == "zh"
-                else f"- The current stage is **goal trade-off and budget reordering first**: under the current assumptions, the earliest gap appears in {next_shortfall.year} for {next_shortfall.description}, at about {_fmt(abs(next_shortfall.gap_or_surplus))}, so the current funding order is not enough."
+                else f"- The current stage is **goal trade-off and budget reordering first**: under the current assumptions, the earliest gap appears in {next_shortfall.year} for {_en_text(next_shortfall.description)}, at about {_fmt(abs(next_shortfall.gap_or_surplus))}, so the current funding order is not enough."
             ),
         )
     elif next_event is not None and next_event.timing_year - profile.current_year <= 3:
@@ -252,7 +283,7 @@ def _summary_state_lines(
             (
                 f"- 当前阶段属于**近期节点保障优先**：最近的明确节点是 {next_event.description}（{next_event.timing_year} 年），距离现在仅 {next_event.timing_year - profile.current_year} 年，这笔钱的可兑现性比收益弹性更重要。"
                 if _ACTIVE_LANG == "zh"
-                else f"- The current stage is **near-term milestone protection first**: the closest clear milestone is {next_event.description} in {next_event.timing_year}, only {next_event.timing_year - profile.current_year} years away, so availability matters more than return upside."
+                else f"- The current stage is **near-term milestone protection first**: the closest clear milestone is {_en_text(next_event.description)} in {next_event.timing_year}, only {next_event.timing_year - profile.current_year} years away, so availability matters more than return upside."
             ),
         )
     elif retirement_gap > 0 and retirement_years_left <= 10:
@@ -359,7 +390,7 @@ def _summary_action_lines(
             (
                 f"- **优先重排最近会出缺口的目标**：先围绕 {next_shortfall.description}（{next_shortfall.year} 年）消化约 {_fmt(abs(next_shortfall.gap_or_surplus))} 的缺口，再考虑其他远期目标是否按原计划推进。"
                 if _ACTIVE_LANG == "zh"
-                else f"- **Reorder the nearest underfunded goal first**: deal with the roughly {_fmt(abs(next_shortfall.gap_or_surplus))} gap around {next_shortfall.description} in {next_shortfall.year} before deciding whether later goals should keep the original path."
+                else f"- **Reorder the nearest underfunded goal first**: deal with the roughly {_fmt(abs(next_shortfall.gap_or_surplus))} gap around {_en_text(next_shortfall.description)} in {next_shortfall.year} before deciding whether later goals should keep the original path."
             ),
             max_items=3,
         )
@@ -369,7 +400,7 @@ def _summary_action_lines(
             (
                 f"- **把最近节点资金单独锁定**：{next_event.description}（{next_event.timing_year} 年）属于近端用途，在这笔钱达标前，应以可用性和低波动为先，而不是追求更高收益。"
                 if _ACTIVE_LANG == "zh"
-                else f"- **Lock the nearest milestone bucket separately**: {next_event.description} in {next_event.timing_year} is a near-use bucket, so availability and low volatility matter more than chasing higher returns before it is fully funded."
+                else f"- **Lock the nearest milestone bucket separately**: {_en_text(next_event.description)} in {next_event.timing_year} is a near-use bucket, so availability and low volatility matter more than chasing higher returns before it is fully funded."
             ),
             max_items=3,
         )
@@ -487,7 +518,7 @@ def _summary_metric_lines(
             (
                 f"- **最近重大节点的可兑现性**：持续检查 {next_event.description}（{next_event.timing_year} 年）对应资金是否仍保持独立和可动用。"
                 if _ACTIVE_LANG == "zh"
-                else f"- **Fund readiness for the nearest major milestone**: keep checking whether the money for {next_event.description} in {next_event.timing_year} remains separate and available."
+                else f"- **Fund readiness for the nearest major milestone**: keep checking whether the money for {_en_text(next_event.description)} in {next_event.timing_year} remains separate and available."
             ),
             max_items=5,
         )
@@ -715,7 +746,7 @@ def _headline_conclusion_lines(
                 if _ACTIVE_LANG == "zh"
                 else f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**: "
                 f"the currently recorded major spending milestones can be covered under this projection; "
-                f"after the last milestone, {last_node.description}, about {_fmt(last_node.balance_after)} remains by {last_node.year}."
+                f"after the last milestone, {_en_text(last_node.description)}, about {_fmt(last_node.balance_after)} remains by {last_node.year}."
             )
         )
     elif negative_nodes:
@@ -728,7 +759,7 @@ def _headline_conclusion_lines(
                 if _ACTIVE_LANG == "zh"
                 else f"- **{_bi('重大节点覆盖结论', 'Major spending milestone conclusion')}**: "
                 f"not every recorded major spending milestone can be covered; the earliest shortfall appears in "
-                f"{first_shortfall.year} for {first_shortfall.description}, with a gap of about {_fmt(abs(first_shortfall.gap_or_surplus))}."
+                f"{first_shortfall.year} for {_en_text(first_shortfall.description)}, with a gap of about {_fmt(abs(first_shortfall.gap_or_surplus))}."
             )
         )
     else:
@@ -788,7 +819,7 @@ def _render_metadata(profile: ClientProfile) -> str:
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     semver = profile.schema_version.replace("handbook-v", "")
     return (
-        f"# {profile.family_name} {_bi('家庭资产配置剧本', 'Family Asset Playbook')}\n\n"
+        f"# {_en_text(profile.family_name)} {_bi('家庭资产配置剧本', 'Family Asset Playbook')}\n\n"
         f"**{_bi('生成时间', 'Generated at')}:** {timestamp} | "
         f"**{_bi('方法论版本', 'Method version')}:** handbook-v{semver} | "
         f"**{_bi('风险偏好', 'Risk preference')}:** {profile.risk_preference}\n\n"
@@ -845,7 +876,7 @@ def _render_section_a(profile: ClientProfile) -> str:
         parts.append("|---|---|---|\n")
         if ret_income > 0:
             income_items = retirement_rollup["income_items"]
-            income_desc = "；".join(f"{name} {_fmt(value)}" for name, value in income_items[:4]) if income_items else (
+            income_desc = _name_amount_items(income_items[:4]) if income_items else (
                 (
                     f"养老金 {_fmt(profile.retirement_monthly_pension)} + 年金 {_fmt(profile.retirement_monthly_annuity)}"
                     if _ACTIVE_LANG == "zh"
@@ -858,7 +889,7 @@ def _render_section_a(profile: ClientProfile) -> str:
             )
         if ret_expense > 0:
             expense_items = retirement_rollup["expense_items"]
-            expense_desc = "；".join(f"{name} {_fmt(value)}" for name, value in expense_items[:4]) if expense_items else _bi("退休后月度生活支出口径", "retirement monthly living spending basis")
+            expense_desc = _name_amount_items(expense_items[:4]) if expense_items else _bi("退休后月度生活支出口径", "retirement monthly living spending basis")
             parts.append(f"| {_bi('退休月支出', 'Retirement monthly spending')} | {_fmt(ret_expense)} | {expense_desc} |\n")
         hc = retirement_rollup["first_year_healthcare_selfpay_total"] or profile.healthcare_starting_annual
         if hc > 0:
@@ -871,9 +902,10 @@ def _render_section_a(profile: ClientProfile) -> str:
                 growth_desc = _bi(f"年复利增长 {pct}%", f"compound annual growth {pct}%")
             cap_desc = _fmt(sum(annual_caps)) if annual_caps else "—"
             gross_hc = sum(m.healthcare_starting_annual for m in profile.members if m.healthcare_starting_annual > 0) or profile.healthcare_starting_annual
-            parts.append(f"| {_bi('退休首年医疗年支出(毛额)', 'Gross annual healthcare spending in first retirement year')} | {_fmt(gross_hc)} | {growth_desc}；{_bi('年度封顶', 'annual cap')} {cap_desc} |\n")
+            separator = "; " if _ACTIVE_LANG == "en" else "；"
+            parts.append(f"| {_bi('退休首年医疗年支出(毛额)', 'Gross annual healthcare spending in first retirement year')} | {_fmt(gross_hc)} | {growth_desc}{separator}{_bi('年度封顶', 'annual cap')} {cap_desc} |\n")
             healthcare_items = retirement_rollup["healthcare_items"]
-            hc_desc = "；".join(f"{name} {_fmt(value)}" for name, value in healthcare_items[:4]) if healthcare_items else _bi("按退休首年医疗支出测算", "estimated from first-year retirement healthcare spending")
+            hc_desc = _name_amount_items(healthcare_items[:4]) if healthcare_items else _bi("按退休首年医疗支出测算", "estimated from first-year retirement healthcare spending")
             parts.append(
                 f"| {_bi('退休首年医疗自付', 'Out-of-pocket healthcare in first retirement year')} | {_fmt(hc)} | {hc_desc} |\n"
             )
@@ -910,7 +942,7 @@ def _render_section_a(profile: ClientProfile) -> str:
         years = evt.timing_year - profile.current_year
         amount = _fmt(evt.estimated_amount) if evt.estimated_amount else "—"
         parts.append(
-            f"| {evt.timing_year} | {_years_label(years)} | {evt.description} | {amount} |\n"
+            f"| {evt.timing_year} | {_years_label(years)} | {_en_text(evt.description)} | {amount} |\n"
         )
     parts.append("\n")
 
@@ -1013,7 +1045,7 @@ def _render_section_b(
         for evt in profile.events:
             if evt.timing_year >= profile.current_year:
                 events_by_yr.setdefault(evt.timing_year, []).append(
-                    (float(evt.estimated_amount or 0), evt.description)
+                    (float(evt.estimated_amount or 0), _en_text(evt.description))
                 )
 
         # 阶段图所需数据: obstacles / 不含事件的正规年支出 / 阶段内累计现金流
@@ -1137,7 +1169,7 @@ def _render_section_b(
             f"**Surplus {_fmt(proj.gap_or_surplus)}**" if proj.gap_or_surplus >= 0 else f"**Gap {_fmt(abs(proj.gap_or_surplus))}**"
         )
         parts.append(
-            f"| {proj.description} | {proj.year} | {_years_label(proj.years_from_now)} "
+            f"| {_en_text(proj.description)} | {proj.year} | {_years_label(proj.years_from_now)} "
             f"| {_fmt(proj.accumulated_savings)} | {_fmt(proj.event_cost)} "
             f"| {_fmt(proj.balance_after)} | {status} |\n"
         )
@@ -1700,7 +1732,7 @@ def _render_section_c5(
     for s in bucket_result.snapshots:
         snap_by_key[(s.bucket_name, s.year)] = s
 
-    series: dict[str, list[float]] = {name: [] for name in bucket_order}
+    series: dict[str, list[float]] = {_chart_bucket_key(name): [] for name in bucket_order}
     labels: list[str] = []
     total_stats_by_year = {s.year: s for s in bucket_result.total_stats}
     total_p10: list[float] = []
@@ -1714,7 +1746,7 @@ def _render_section_c5(
         for bname in bucket_order:
             s = snap_by_key.get((bname, yr))
             val = s.p50 if s else 0.0
-            series[bname].append(val)
+            series[_chart_bucket_key(bname)].append(val)
         total_stats = total_stats_by_year.get(yr)
         if total_stats:
             total_p10.append(total_stats.p10)

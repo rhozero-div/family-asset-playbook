@@ -53,8 +53,10 @@ def save_yaml_and_generate(
     profiles_dir = PROJECT_ROOT / "profiles"
     profiles_dir.mkdir(exist_ok=True)
 
-    # 确定客户代码
-    code = _resolve_code(yaml_text, client_code, profiles_dir)
+    ok, code, code_error = ensure_code_is_available(yaml_text, client_code)
+    if not ok:
+        tmp_path.unlink(missing_ok=True)
+        return False, "", code_error
 
     saved_path = profiles_dir / f"{code}.yaml"
     saved_path.write_text(yaml_text, encoding="utf-8")
@@ -106,8 +108,8 @@ def _resolve_code(yaml_text: str, client_code: str, profiles_dir: Path) -> str:
     if clients_path.exists():
         registry = json.loads(clients_path.read_text(encoding="utf-8"))
 
-    # 优先使用传入 code(编辑已有客户)
-    if client_code and client_code in registry:
+    # 优先使用传入 code。新建客户时也允许显式指定未占用的 code。
+    if client_code and _CODE_RE.match(f"{client_code}.yaml"):
         return client_code
 
     # 查找同名客户,复用其 code
@@ -265,6 +267,24 @@ def save_yaml_only(yaml_text: str, client_code: str) -> tuple[bool, str, str]:
     saved_path = profiles_dir / f"{code}.yaml"
     saved_path.write_text(yaml_text, encoding="utf-8")
     _sync_clients_json(profiles_dir)
+    return True, code, ""
+
+
+def ensure_code_is_available(yaml_text: str, client_code: str) -> tuple[bool, str, str]:
+    """校验解析后的客户代码是否可用于当前 YAML。"""
+    profiles_dir = PROJECT_ROOT / "profiles"
+    profiles_dir.mkdir(exist_ok=True)
+    code = _resolve_code(yaml_text, client_code, profiles_dir)
+    name = _family_name(yaml_text)
+
+    clients_path = profiles_dir / "clients.json"
+    import json
+    registry = {}
+    if clients_path.exists():
+        registry = json.loads(clients_path.read_text(encoding="utf-8"))
+
+    if code in registry and registry[code].get("name") != name:
+        return False, "", f"客户代码 {code} 已被 {registry[code]['name']} 使用"
     return True, code, ""
 
 
