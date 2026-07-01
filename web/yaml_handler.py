@@ -1,20 +1,22 @@
 """YAML 输入处理 + 调计算引擎。
 
 接收 YAML 字符串,校验后调用 engine.cli._generate_playbook。
-以客户代码命名文件: profiles/{000001..999999}.yaml。
+以客户代码命名文件: {storage_dir}/{000001..999999}.yaml。
 """
 from __future__ import annotations
 
+import re
 import sys
 import tempfile
-import re
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from engine.cli import _generate_playbook  # noqa: E402
 from tools.validate_collected_profile import _validate  # noqa: E402
+from web.storage_paths import storage_dir  # noqa: E402
 
 _CODE_RE = re.compile(r"^(\d{6})\.yaml$")
 
@@ -50,8 +52,7 @@ def save_yaml_and_generate(
         return False, "", error_msg
     tmp_path = Path(tmp_or_err)
 
-    profiles_dir = PROJECT_ROOT / "profiles"
-    profiles_dir.mkdir(exist_ok=True)
+    profiles_dir = storage_dir()
 
     ok, code, code_error = ensure_code_is_available(yaml_text, client_code)
     if not ok:
@@ -229,8 +230,7 @@ def _family_name_from_data(data: dict) -> str | None:
 
 def read_clients() -> list[dict]:
     """读取客户注册表(每次调用自动同步)。"""
-    profiles_dir = PROJECT_ROOT / "profiles"
-    profiles_dir.mkdir(exist_ok=True)
+    profiles_dir = storage_dir()
     items = _sync_clients_json(profiles_dir)
     # items 不含 code(key 在外层),重新组装
     import json
@@ -248,8 +248,7 @@ def save_yaml_only(yaml_text: str, client_code: str) -> tuple[bool, str, str]:
     if not ok:
         return False, "", error_msg
 
-    profiles_dir = PROJECT_ROOT / "profiles"
-    profiles_dir.mkdir(exist_ok=True)
+    profiles_dir = storage_dir()
 
     # 确定代码
     code = _resolve_code(yaml_text, client_code, profiles_dir)
@@ -272,8 +271,7 @@ def save_yaml_only(yaml_text: str, client_code: str) -> tuple[bool, str, str]:
 
 def ensure_code_is_available(yaml_text: str, client_code: str) -> tuple[bool, str, str]:
     """校验解析后的客户代码是否可用于当前 YAML。"""
-    profiles_dir = PROJECT_ROOT / "profiles"
-    profiles_dir.mkdir(exist_ok=True)
+    profiles_dir = storage_dir()
     code = _resolve_code(yaml_text, client_code, profiles_dir)
     name = _family_name(yaml_text)
 
@@ -290,9 +288,7 @@ def ensure_code_is_available(yaml_text: str, client_code: str) -> tuple[bool, st
 
 def next_client_code() -> str:
     """返回下一个可用客户代码。"""
-    from pathlib import Path
-    profiles_dir = PROJECT_ROOT / "profiles"
-    profiles_dir.mkdir(exist_ok=True)
+    profiles_dir = storage_dir()
     clients_path = profiles_dir / "clients.json"
     import json
     existing = []
@@ -304,7 +300,7 @@ def next_client_code() -> str:
 
 def update_client(code: str, data: dict) -> None:
     import json
-    profiles_dir = PROJECT_ROOT / "profiles"
+    profiles_dir = storage_dir()
     clients_path = profiles_dir / "clients.json"
     if not clients_path.exists():
         return

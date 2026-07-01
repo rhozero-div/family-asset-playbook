@@ -37,6 +37,7 @@ http://127.0.0.1:8000/
 
 - `FAPM_ENABLE_SERVER_STORAGE=1` 会启用更接近顾问工作流的本地持久化
 - 已保存 YAML 与索引会写入 `profiles/`
+- 如果你希望这些保存文件落在仓库外，可再设置 `FAPM_STORAGE_DIR=/absolute/path/to/local-data`
 - 如果你想模拟公开演示模式，可以去掉这个环境变量
 
 ## 3. 使用问卷

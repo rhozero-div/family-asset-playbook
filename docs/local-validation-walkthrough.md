@@ -35,6 +35,7 @@ Notes:
 
 - `FAPM_ENABLE_SERVER_STORAGE=1` enables advisor-style local persistence
 - Saved YAML files and indexes are written into `profiles/`
+- If you want those saved files outside the repo, also set `FAPM_STORAGE_DIR=/absolute/path/to/local-data`
 - If you want public-demo behavior, omit that environment variable
 
 ## 3. Use the Questionnaire

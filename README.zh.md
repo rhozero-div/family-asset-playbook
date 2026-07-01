@@ -137,6 +137,11 @@ FAPM_ENABLE_SERVER_STORAGE=1 .venv/bin/python -m uvicorn web.app:app --host 127.
 - 已保存问卷可以在本地重新打开
 - 本地测试会更接近真实顾问工作流
 
+可选覆盖：
+
+- 如果你希望客户 YAML 和 `clients.json` 保存在仓库外，可额外设置 `FAPM_STORAGE_DIR=/absolute/path/to/local-data`
+- 如果不设置，本地持久化仍默认写入仓库内的 `profiles/`
+
 不启用时：
 
 - 应用会以公开演示模式运行

@@ -56,7 +56,7 @@ class TestYamlHandlerCodeResolution(unittest.TestCase):
                 encoding="utf-8",
             )
             sample_yaml = Path(ROOT / "profiles" / "sample-wang.yaml").read_text(encoding="utf-8")
-            with mock.patch.object(yaml_handler, "PROJECT_ROOT", root):
+            with mock.patch("web.yaml_handler.storage_dir", return_value=profiles_dir):
                 ok, code, error = yaml_handler.ensure_code_is_available(sample_yaml, "123456")
             self.assertFalse(ok)
             self.assertEqual(code, "")

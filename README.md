@@ -138,6 +138,11 @@ With `FAPM_ENABLE_SERVER_STORAGE=1`:
 - saved questionnaires can be reopened locally
 - local testing behaves like the advisor workflow
 
+Optional override:
+
+- set `FAPM_STORAGE_DIR=/absolute/path/to/local-data` if you want saved client YAML files and `clients.json` to live outside the repo
+- if unset, local persistence still defaults to `profiles/` inside the repo
+
 Without it:
 
 - the app runs in public-demo mode

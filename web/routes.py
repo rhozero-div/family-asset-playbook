@@ -1,7 +1,6 @@
 """路由定义。"""
 from __future__ import annotations
 
-from pathlib import Path
 import json
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -10,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from web.markdown_renderer import render_markdown
 from web.runtime import server_storage_enabled
+from web.storage_paths import PROJECT_ROOT, sample_profile_path, storage_dir
 from web.yaml_handler import (
     generate_playbook_from_yaml,
     save_yaml_and_generate,
@@ -19,9 +19,6 @@ from web.yaml_handler import (
     next_client_code,
     _family_name,
 )
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PROFILES_DIR = PROJECT_ROOT / "profiles"
 
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "web" / "templates"))
 templates.env.globals["asset_version"] = "20260630-03"
@@ -102,7 +99,7 @@ async def questionnaire_new(request: Request):
 async def questionnaire_sample_wang(request: Request):
     """以王先生示例预填问卷。"""
     import yaml
-    sample_path = PROFILES_DIR / "sample-wang.yaml"
+    sample_path = sample_profile_path()
     if not sample_path.exists():
         raise HTTPException(status_code=404, detail="示例档案不存在")
     yaml_text = sample_path.read_text(encoding="utf-8")
@@ -129,7 +126,7 @@ async def questionnaire_load(request: Request, code: str):
     entry = next((c for c in clients if c["code"] == code), None)
     if not entry:
         raise HTTPException(status_code=404, detail=f"未找到客户: {code}")
-    yaml_path = PROFILES_DIR / entry["yaml_file"]
+    yaml_path = storage_dir() / entry["yaml_file"]
     if not yaml_path.exists():
         raise HTTPException(status_code=404, detail="客户档案文件不存在")
     data = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
