@@ -1440,19 +1440,18 @@ def _render_section_c(
     return "".join(parts)
 
 
-# ── C3. 心理账户余额（居中情景）─────────────────────
+# ── C3. 心理账户年度投入现金流（居中情景）──────────────
 
 def _render_section_c3(
     bucket_result: BucketProjectionResult | None,
     plan: AllocationPlan,
     chart_end_year: int,
 ) -> str:
-    """心理账户余额表: 每账户每年的居中情景余额。"""
-    import json
+    """心理账户年度投入表: 每账户每年的居中情景现金投入。"""
 
     parts = []
 
-    if bucket_result is None or not bucket_result.snapshots:
+    if bucket_result is None or not bucket_result.breakdowns:
         return "".join(parts)
 
     account_order = ["应急储备"]
@@ -1460,22 +1459,22 @@ def _render_section_c3(
     if plan.surplus:
         account_order.append("富余资金")
 
-    years = sorted({s.year for s in bucket_result.snapshots if s.year <= chart_end_year})
+    years = sorted({b.year for b in bucket_result.breakdowns if b.year <= chart_end_year})
     if not years:
         return "".join(parts)
 
-    parts.append(f"---\n\n### C3. {_bi('心理账户余额（居中情景）', 'Mental Account Balances (middle outcome)')}\n\n")
+    parts.append(f"---\n\n### C3. {_bi('心理账户年度投入现金流（居中情景）', 'Mental Account Annual Contributions (middle outcome)')}\n\n")
     parts.append(
         _bi(
-            "下表展示各心理账户在每个年末的 <b>居中结果余额</b>，并已计入投资收益。“初始划拨”代表最开始的资金分层，后续各年展示的是每年年末滚动后的账户余额。\n\n",
-            "The table below shows the <b>middle-outcome balance</b> of each mental account at each year end, including investment results. “Initial allocation” is the starting bucket split, and later rows show rolling year-end balances.\n\n",
+            "下表展示各心理账户在每个年份内新增投入的 <b>居中结果现金流</b>。这里不看投资收益后的余额，只看当年实际有多少新增资金流入各账户；年初一次性的“初始划拨”单独列出，方便和后续年度投入区分。\n\n",
+            "The table below shows the <b>middle-outcome cash contribution</b> flowing into each mental account during each year. It excludes ending balances and focuses only on new cash assigned during the year; the one-time initial allocation is listed separately.\n\n",
         )
     )
 
-    bal_by_key: dict[tuple[str, int], float] = {}
-    for s in bucket_result.snapshots:
-        if s.year <= chart_end_year:
-            bal_by_key[(s.bucket_name, s.year)] = s.p50
+    cash_by_key: dict[tuple[str, int], float] = {}
+    for item in bucket_result.breakdowns:
+        if item.year <= chart_end_year:
+            cash_by_key[(item.bucket_name, item.year)] = item.cash_p50
 
     header_cols = [_bi("年份", "Year")] + [_display_bucket_name(x) for x in account_order] + [f"**{_bi('合计', 'Total')}**"]
     parts.append("| " + " | ".join(header_cols) + " |\n")
@@ -1500,7 +1499,7 @@ def _render_section_c3(
         row = [f"**{yr}**"]
         yr_sum = 0.0
         for aname in account_order:
-            val = bal_by_key.get((aname, yr), 0.0)
+            val = cash_by_key.get((aname, yr), 0.0)
             yr_sum += val
             row.append(_fmt(val))
         row.append(f"**{_fmt(yr_sum)}**")

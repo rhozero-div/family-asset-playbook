@@ -364,6 +364,13 @@ class TestRenderPlaybook(unittest.TestCase):
         md = _render()
         self.assertIn("各层余额与资金来源", md)
 
+    def test_c3_uses_annual_contribution_wording(self):
+        md = _render()
+        self.assertIn("心理账户年度投入现金流（居中情景）", md)
+        self.assertIn("初始划拨", md)
+        self.assertIn("新增投入", md)
+        self.assertNotIn("心理账户余额（居中情景）", md)
+
     def test_renders_bucket_fan_chart_data(self):
         """每个 bucket 都应有 1 个 canvas + 1 个 JSON script 标签 (混合 bar+fan)。"""
         import json
