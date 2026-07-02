@@ -32,6 +32,16 @@ http://127.0.0.1:3013
 - Build command: `npm run build`
 - Output directory: `out`
 
+This repo also includes a GitHub Actions workflow:
+
+- `.github/workflows/deploy-cloudflare-pages.yml`
+
+If you prefer GitHub-driven deployment instead of Cloudflare's direct Git integration, set these repository secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_PROJECT_NAME`
+
 ## Optional Environment Variables
 
 - `NEXT_PUBLIC_DEMO_URL`

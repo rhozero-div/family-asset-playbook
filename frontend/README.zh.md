@@ -34,6 +34,16 @@ http://127.0.0.1:3013
 - Build command：`npm run build`
 - Output directory：`out`
 
+仓库里也附带了一条 GitHub Actions 自动部署链路：
+
+- `.github/workflows/deploy-cloudflare-pages.yml`
+
+如果你想用 GitHub 驱动发布，而不是完全依赖 Cloudflare 控制台里的 Git 集成，请在仓库 Secrets 中配置：
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_PROJECT_NAME`
+
 ## 可选环境变量
 
 - `NEXT_PUBLIC_DEMO_URL`
