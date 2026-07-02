@@ -1,5 +1,17 @@
 {% extends "base.html" %}
 {% block title %}FAPM — 客户问卷 / Questionnaire{% endblock %}
+{% block head_extra %}
+<style>
+  .container:has(.questionnaire-shell) {
+    max-width: 1560px;
+  }
+  @media (max-width: 1600px) {
+    .container:has(.questionnaire-shell) {
+      max-width: 96vw;
+    }
+  }
+</style>
+{% endblock %}
 {% block content %}
 <h2>客户问卷 / Client Questionnaire</h2>
 
@@ -61,8 +73,9 @@
       <h4 class="panel-subtitle">当前现金流汇总 / Current Cash Flow Snapshot</h4>
       <div class="family-totals">
         <span>家庭年收入 / Annual household income: <strong id="family-income-total">¥0</strong></span>
-        <span>家庭月常规支出 / Monthly household spending: <strong id="family-expense-total">¥0</strong></span>
-        <span>月结余 / Monthly surplus: <strong id="family-surplus-total">¥0</strong></span>
+        <span>家庭月常规支出(不含保费) / Monthly regular spending (excluding insurance premiums): <strong id="family-expense-total">¥0</strong></span>
+        <span>保险保费(月均) / Insurance premiums (monthly average): <strong id="family-premium-total">¥0</strong></span>
+        <span>月结余(扣保费后) / Monthly surplus after premiums: <strong id="family-surplus-total">¥0</strong></span>
       </div>
     </div>
 
@@ -89,7 +102,7 @@
 
     <div class="subpanel-card">
       <h4 class="panel-subtitle">成员常规支出 / Member Spending</h4>
-      <p class="hint">按成员录入当前月支出。退休后的常规支出采用系数折算，例如 0.7 表示退休后按当前月支出的 70% 估算 / Enter current monthly spending by member. Retirement spending is estimated with a factor, for example 0.7 means 70% of current monthly spending.</p>
+      <p class="hint">按成员录入当前月支出，这里的口径明确不含保费。退休后的常规支出采用系数折算，例如 0.7 表示退休后按当前月支出的 70% 估算 / Enter current monthly spending by member, explicitly excluding insurance premiums. Retirement spending is estimated with a factor, for example 0.7 means 70% of current monthly spending.</p>
       <div id="expense-rows"></div>
     </div>
 
@@ -202,6 +215,7 @@
 
     <div class="subpanel-card">
       <div class="section-label">个人保险配置 / Individual Insurance</div>
+      <p class="hint">这里单独录入现有保单的年保费，供保险建议模块和主剧本现金流共同使用。这里的保费不会自动写进“常规支出”，系统会单独计入 / Enter current annual insurance premiums here. They are used by both the insurance planner and the main playbook cash-flow model. These premiums are not part of regular spending and are tracked separately.</p>
       <div id="insurance-rows"></div>
     </div>
 
@@ -212,7 +226,7 @@
           <tr>
             <th class="align-left">保额(元) / Amount</th>
             <th>年保费 / Annual premium</th>
-            <th>缴费年 / Pay years</th>
+            <th>剩余缴费年数 / Remaining pay years</th>
             <th>关联心理账户 / Linked account</th>
             <th class="table-action-col"></th>
           </tr>
@@ -417,11 +431,81 @@
       </div>
     </div>
 
+    <div class="subpanel-card">
+      <h4 class="panel-subtitle">保险建议默认参数 / Insurance Planning Defaults</h4>
+      <p class="hint">这些参数会随问卷一起保存，作为保险配置建议模块的默认口径；如在独立保险页手动覆盖，则以手动输入为准 / These values are saved with the questionnaire and act as defaults for the insurance-planning module. If you override them on the standalone insurance page, the manual inputs there take precedence.</p>
+      <p class="hint">不填写“总年保费上限”和“自动预算比例”时，系统会结合当前结余、未来重大支出和已有保费自动估算保费预算。重疾目标会在“收入倍数口径”和“支出年数口径”中取较高者；未成年人和老人重疾目标目前使用绝对值口径 / If the annual premium cap and auto budget ratio are left blank, the system estimates the premium budget from current surplus, future major events, and existing premiums. Critical illness targets use the higher of the income-multiple and expense-years methods; child and elder CI targets currently use absolute-value thresholds.</p>
+      <div class="field-row">
+        <div class="field">
+          <label>客户希望的总年保费上限(元,可选) / Annual premium cap (optional)</label>
+          <div class="hint">手动卡住全年总保费上限；填写后优先级高于自动预算 / Hard cap for total annual premium. If filled, it overrides the automatic budget.</div>
+          <input type="number" class="as-ins-premium-cap" min="0" step="100" value="">
+        </div>
+        <div class="field">
+          <label>自动预算比例(占年收入%,可选) / Auto budget ratio (% of annual income, optional)</label>
+          <div class="hint">不手填总保费上限时，可用它指定自动预算的起点；留空则系统自行估算 / Optional starting point for automatic premium budgeting when no manual cap is set.</div>
+          <input type="number" class="as-ins-budget-ratio-pct" min="0" max="30" step="0.5" value="">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>高责任家庭定寿目标倍数 / Term multiple for responsibility-heavy households</label>
+          <div class="hint">用于有未成年子女、受赡养老人或明显负债责任的家庭成员 / Used for members in responsibility-heavy households.</div>
+          <input type="number" class="as-ins-term-with-dependents" min="1" max="20" step="0.5" value="7.0">
+        </div>
+        <div class="field">
+          <label>低责任家庭定寿目标倍数 / Term multiple for low-responsibility households</label>
+          <div class="hint">用于独立成年人或低责任家庭成员的较克制定寿口径 / A more conservative term-life multiple for independent adults or lower-responsibility households.</div>
+          <input type="number" class="as-ins-term-without-dependents" min="1" max="20" step="0.5" value="4.0">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>重疾目标收入倍数 / Critical illness income multiple</label>
+          <div class="hint">衡量收入暂停风险；会和“支出年数口径”取高 / Measures income interruption risk and is compared against the expense-years method.</div>
+          <input type="number" class="as-ins-ci-income-multiple" min="1" max="10" step="0.5" value="3.0">
+        </div>
+        <div class="field">
+          <label>重疾目标支出年数 / Critical illness expense years</label>
+          <div class="hint">衡量治疗与恢复期要预留多少年常规支出；会和“收入倍数口径”取高 / Measures how many years of spending to reserve for treatment and recovery.</div>
+          <input type="number" class="as-ins-ci-expense-years" min="1" max="10" step="0.5" value="5.0">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>未成年人重疾目标(元) / Child critical illness target</label>
+          <div class="hint">未成年人不按收入替代测算，当前使用绝对值目标 / Children use an absolute-value target instead of income replacement.</div>
+          <input type="number" class="as-ins-child-ci-target" min="0" step="10000" value="300000">
+        </div>
+        <div class="field">
+          <label>老人重疾目标(元) / Elder critical illness target</label>
+          <div class="hint">老人当前也使用绝对值下限，再和个人支出口径取高 / Elders use an absolute-value floor, then compare it against a personal-expense-based target.</div>
+          <input type="number" class="as-ins-elder-ci-target" min="0" step="10000" value="300000">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>成年受抚养人成为基本独立的收入缓冲倍数 / Adult independence buffer</label>
+          <div class="hint">当预计年收入达到“个人年常规支出 × 这个倍数”后，才切到独立成年人逻辑 / Switches a dependent adult into independent-adult logic only after income reaches this buffer above personal spending.</div>
+          <input type="number" class="as-ins-adult-buffer" min="1" max="3" step="0.05" value="1.2">
+        </div>
+        <div class="field">
+          <label>是否考虑高端医疗/特需升级 / Consider HCI upgrade</label>
+          <div class="hint">关闭后，保险建议模块将不再生成高端医疗/特需升级建议 / If turned off, the insurance planner will not generate HCI upgrade recommendations.</div>
+          <select class="as-ins-include-hci">
+            <option value="true" selected>考虑 / Yes</option>
+            <option value="false">不考虑 / No</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
   </div>
 </details>
 
 <!-- ====== 底部提交区 ====== -->
 <div class="submit-area">
+  <p class="hint">{% if lang == "en" %}Typical advisor flow: finish the factual intake here and then generate the client playbook directly.{% else %}顾问常用流程：先在这里完成客户事实录入，再直接生成客户剧本。{% endif %}</p>
   <div class="field-row">
     <div class="field narrow">
       <label for="current_year">当前年份 / Current Year</label>

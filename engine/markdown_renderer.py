@@ -857,7 +857,7 @@ def _render_section_a(profile: ClientProfile) -> str:
     parts.append(f"| {_bi('项目', 'Item')} | {_bi('月度金额', 'Monthly amount')} |\n|---|---|\n")
     parts.append(f"| {_bi('家庭月收入(税前)', 'Household monthly income (pre-tax)')} | {_fmt(monthly_income)} |\n")
     if profile.monthly_living_expense > 0:
-        parts.append(f"| {_bi('常规支出(含家庭额外)', 'Regular expenses (including household-level extra spending)')} | {_fmt(profile.monthly_living_expense)} |\n")
+        parts.append(f"| {_bi('常规支出(含家庭额外,不含保费)', 'Regular expenses (including household-level extra spending, excluding insurance premiums)')} | {_fmt(profile.monthly_living_expense)} |\n")
     if profile.monthly_liabilities > 0:
         parts.append(f"| {_bi('贷款月供', 'Monthly debt payment')} | {_fmt(profile.monthly_liabilities)} |\n")
     if monthly_premium > 0:
@@ -1701,6 +1701,222 @@ def _render_section_c6(
     return "".join(parts)
 
 
+def _insurance_chart_payload(insurance_result) -> list[dict]:
+    items: list[dict] = []
+    for view in insurance_result.member_views:
+        items.append(
+            {
+                "member_name": view.member_name,
+                "coverage_labels": ["定寿", "重疾", "高端医疗"],
+                "current_coverage": [view.current_term_coverage, view.current_ci_coverage, view.current_hci_coverage],
+                "target_coverage": [view.target_term_coverage, view.target_ci_coverage, view.target_hci_coverage],
+                "plan_a_coverage": [view.plan_a_term_coverage, view.plan_a_ci_coverage, view.plan_a_hci_coverage],
+                "plan_b_coverage": [view.plan_b_term_coverage, view.plan_b_ci_coverage, view.plan_b_hci_coverage],
+            }
+        )
+    return items
+
+
+def _insurance_product_label(label: str) -> str:
+    if _ACTIVE_LANG == "zh":
+        return label
+    mapping = {
+        "基础医疗报销保障": "Basic medical reimbursement",
+        "定期寿险": "Term life",
+        "重疾保障": "Critical illness",
+        "高端医疗/特需医疗": "Premium medical / specialist access",
+    }
+    return mapping.get(label, label)
+
+
+def _insurance_status_text(product_label: str, coverage: float) -> str:
+    if _ACTIVE_LANG == "zh":
+        if product_label == "基础医疗报销保障":
+            return "已覆盖" if coverage > 0 else "缺失"
+        return _fmt(coverage)
+    if product_label == "基础医疗报销保障":
+        return "Covered" if coverage > 0 else "Missing"
+    return _fmt(coverage)
+
+
+def _scenario_summary_lines(plan) -> tuple[str, ...]:
+    if _ACTIVE_LANG == "zh":
+        return tuple(plan.summary)
+    if getattr(plan, "scenario_key", "") == "core":
+        return (
+            "Start with basic medical reimbursement, then fill term-life or critical-illness gaps in responsibility order.",
+            "If budget is limited, protect the key earners first before expanding to lower-priority gaps.",
+            "This path focuses on making the highest-priority protection more complete instead of spreading budget evenly.",
+        )
+    return (
+        "Keep basic medical reimbursement in place, then spread budget across term life, critical illness, and medical upgrades.",
+        "Try to place at least some coverage in each major category, even if each single layer is more conservative.",
+        "This path fits households that want the structure in place first and then add thickness over time.",
+    )
+
+
+def _insurance_warning_lines(insurance_result) -> tuple[str, ...]:
+    if _ACTIVE_LANG == "zh":
+        return tuple(insurance_result.warnings)
+    metrics = insurance_result.metrics
+    warnings: list[str] = []
+    if metrics.annual_current_surplus <= 0:
+        warnings.append("Current household net cash flow is already tight, so any added premium should remain very restrained.")
+    if metrics.next_10y_negative_gap < 0:
+        warnings.append(
+            f"There is about {_fmt(abs(metrics.next_10y_negative_gap))} of milestone funding pressure within the next 10 years, so long-duration added premiums should not be too heavy."
+        )
+    if metrics.retirement_medical_selfpay_first_year > 0:
+        warnings.append(
+            f"Estimated out-of-pocket healthcare spending in the first retirement year is about {_fmt(metrics.retirement_medical_selfpay_first_year)}, so later recommendations should also respect post-retirement payment capacity."
+        )
+    return tuple(warnings)
+
+
+def _insurance_visible_lines(lines: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+    hidden_tokens = ("年保费", "annual premium", "premium rises", "premium would rise")
+    return tuple(line for line in lines if not any(token in line for token in hidden_tokens))
+
+
+def _render_section_d_insurance(insurance_result) -> str:
+    if insurance_result is None:
+        return ""
+
+    import html
+    import json
+
+    metrics = insurance_result.metrics
+    chart_payload = json.dumps(_insurance_chart_payload(insurance_result), ensure_ascii=False)
+    parts = [f"---\n\n## D. {_bi('保险配置建议', 'Insurance Structure Suggestion')}\n\n"]
+    parts.append(
+        (
+            f"> 本节直接复用问卷里的现有保险、现金流、负债和重大节点信息，给出结构层面的保险建议，不涉及具体产品推荐。\n\n"
+            if _ACTIVE_LANG == "zh"
+            else "> This section uses the questionnaire's insurance, cash flow, debt, and milestone inputs to produce a structure-level insurance recommendation rather than product selection.\n\n"
+        )
+    )
+
+    parts.append(f"### D1. {_bi('家庭保障概览', 'Household Protection Snapshot')}\n\n")
+    parts.append(f"| {_bi('指标', 'Metric')} | {_bi('结果', 'Reading')} |\n")
+    parts.append("|---|---|\n")
+    parts.append(f"| {_bi('当前月结余', 'Current monthly surplus')} | {_fmt(metrics.monthly_current_surplus)} |\n")
+    parts.append(f"| {_bi('未来10年重大支出', 'Major spending over next 10 years')} | {_fmt(metrics.next_10y_major_events)} |\n")
+    gap_text = (
+        f"缺口约 {_fmt(abs(metrics.next_10y_negative_gap))}" if metrics.next_10y_negative_gap < 0 else "未见明显缺口"
+        if _ACTIVE_LANG == "zh"
+        else (f"Gap about {_fmt(abs(metrics.next_10y_negative_gap))}" if metrics.next_10y_negative_gap < 0 else "No obvious gap")
+    )
+    parts.append(f"| {_bi('未来10年重大支出覆盖压力', '10-year milestone coverage pressure')} | {gap_text} |\n")
+    parts.append("\n")
+    warning_lines = _insurance_warning_lines(insurance_result)
+    if warning_lines:
+        for warning in warning_lines:
+            parts.append(f"- {warning}\n")
+        parts.append("\n")
+
+    parts.append(f"### D2. {_bi('识别到的主要保障缺口', 'Key identified protection gaps')}\n\n")
+    parts.append(
+        f"| {_bi('成员', 'Member')} | {_bi('保障类型', 'Coverage type')} | {_bi('优先级', 'Priority')} | {_bi('当前口径', 'Current')} | {_bi('目标口径', 'Target')} |\n"
+    )
+    parts.append("|---|---|---|---|---|\n")
+    for need in insurance_result.needs:
+        current_text = need.current_status if _ACTIVE_LANG == "zh" else _insurance_status_text(need.product_label, need.current_coverage)
+        target_text = need.target_status if _ACTIVE_LANG == "zh" else _insurance_status_text(need.product_label, need.target_coverage)
+        parts.append(
+            f"| {_en_text(need.member_name)} | {_insurance_product_label(need.product_label)} | P{need.priority_rank} | {current_text} | {target_text} |\n"
+        )
+    parts.append("\n")
+    for idx, member in enumerate(insurance_result.member_views):
+        gap_lines = _insurance_visible_lines(member.gap_explanation) if _ACTIVE_LANG == "zh" else ()
+        parts.append(f"#### {_en_text(member.member_name)}\n\n")
+        parts.append(
+            f"""
+<div class="insurance-member-row">
+  <div class="insurance-chart-card insurance-member-chart">
+    <h4>{_bi('保障缺口对比', 'Coverage gap comparison')}</h4>
+    <div class="insurance-chart-box"><canvas id="playbook-gap-chart-{idx}"></canvas></div>
+  </div>
+  <div class="insurance-text-card insurance-member-text">
+""".strip() + "\n\n"
+        )
+        if _ACTIVE_LANG == "zh":
+            if gap_lines:
+                parts.append("<ul>\n")
+                for line in gap_lines:
+                    parts.append(f"<li>{html.escape(line)}</li>\n")
+                parts.append("</ul>\n")
+        else:
+            parts.append("<ul>\n")
+            parts.append(f"<li>{html.escape(_en_text(member.member_name))} has a visible protection gap structure that should be read before discussing any plan choice.</li>\n")
+            parts.append("</ul>\n")
+        parts.append("\n</div>\n</div>\n\n")
+
+    for idx, plan in enumerate((insurance_result.core_plan, insurance_result.balanced_plan), start=1):
+        section_no = idx + 2
+        is_core = plan.scenario_key == "core"
+        parts.append(f"### D{section_no}. {_en_text(plan.scenario_label) if _ACTIVE_LANG == 'zh' else ('Plan A: Core protection first' if is_core else 'Plan B: Broader structure with more restrained single-layer coverage')}\n\n")
+        parts.append(
+            (
+                f"- {_bi('这套方案只展示保障结构与保额建议，不再展示保费对比图', 'This path now focuses on coverage structure and suggested coverage amounts only, without premium-comparison charts.')}\n"
+            )
+        )
+        for line in _scenario_summary_lines(plan):
+            parts.append(f"- {line}\n")
+        parts.append("\n")
+        parts.append(
+            f"| {_bi('成员', 'Member')} | {_bi('保障类型', 'Coverage type')} | {_bi('本方案建议新增', 'Suggested added coverage')} | {_bi('完成度', 'Completion ratio')} |\n"
+        )
+        parts.append("|---|---|---|---|\n")
+        for item in plan.allocations:
+            added = _fmt(item.recommended_additional_coverage) if item.recommended_additional_coverage > 0 else (_bi("暂不新增", "No addition now"))
+            parts.append(
+                f"| {_en_text(item.member_name)} | {_insurance_product_label(item.product_label)} | {added} | {item.fill_ratio:.0%} |\n"
+            )
+        parts.append("\n")
+        for member_idx, member in enumerate(insurance_result.member_views):
+            lines = (
+                _insurance_visible_lines(member.plan_a_explanation)
+                if is_core and _ACTIVE_LANG == "zh"
+                else _insurance_visible_lines(member.plan_b_explanation)
+                if _ACTIVE_LANG == "zh"
+                else ()
+            )
+            canvas_id = f"playbook-{'core' if is_core else 'balanced'}-coverage-chart-{member_idx}"
+            heading = "方案 A 保额前后对比" if is_core and _ACTIVE_LANG == "zh" else "方案 B 保额前后对比" if _ACTIVE_LANG == "zh" else ("Plan A coverage comparison" if is_core else "Plan B coverage comparison")
+            parts.append(f"#### {_en_text(member.member_name)}\n\n")
+            parts.append(
+                f"""
+<div class="insurance-member-row">
+  <div class="insurance-chart-card insurance-member-chart">
+    <h4>{heading}</h4>
+    <div class="insurance-chart-box"><canvas id="{canvas_id}"></canvas></div>
+  </div>
+  <div class="insurance-text-card insurance-member-text">
+""".strip() + "\n\n"
+            )
+            if _ACTIVE_LANG == "zh":
+                if lines:
+                    parts.append("<ul>\n")
+                    for line in lines:
+                        parts.append(f"<li>{html.escape(line)}</li>\n")
+                    parts.append("</ul>\n")
+            else:
+                parts.append("<ul>\n")
+                parts.append(
+                    f"<li>{html.escape(_en_text(member.member_name))} is shown here under {'Plan A' if is_core else 'Plan B'} as a coverage-structure suggestion.</li>\n"
+                )
+                parts.append("</ul>\n")
+            parts.append("\n</div>\n</div>\n\n")
+
+    parts.append(f"### D5. {_bi('当前假设与边界', 'Current assumptions and boundaries')}\n\n")
+    for item in insurance_result.assumptions:
+        parts.append(f"- {item}\n")
+    parts.append("\n")
+
+    parts.append(f'<script id="insurance-playbook-chart-data" type="application/json">{chart_payload}</script>\n\n')
+    return "".join(parts)
+
+
 # ── C5. 各层余额堆叠图（综合图） ─────────────────────
 
 def _render_section_c5(
@@ -1803,6 +2019,7 @@ def render_playbook(
     yearly_snapshots: tuple[YearlySnapshot, ...] = (),
     return_snapshots: tuple[YearlyReturnSnapshot, ...] = (),
     bucket_result: BucketProjectionResult | None = None,
+    insurance_result=None,
     lang: str = "zh",
 ) -> str:
     """渲染完整剧本 Markdown。"""
@@ -1818,5 +2035,6 @@ def render_playbook(
         _render_stage_heatmap(bucket_result, plan, chart_end_year),
         _render_section_c5(bucket_result, plan, chart_end_year),
         _render_section_c6(bucket_result, plan, chart_end_year),
+        _render_section_d_insurance(insurance_result),
     ]
     return "".join(parts)

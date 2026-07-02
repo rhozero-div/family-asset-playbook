@@ -75,6 +75,8 @@ class TestPlaybookLanguageSwitch(unittest.TestCase):
         self.assertIn("Family Asset Playbook", body)
         self.assertIn("?lang=zh", body)
         self.assertIn("?lang=en", body)
+        self.assertNotIn('action="/asset-planner/analyze"', body)
+        self.assertNotIn('action="/insurance-planner/analyze"', body)
 
     def test_generate_uses_storage_dir_when_code_missing(self):
         routes.server_storage_enabled = lambda: True
@@ -121,6 +123,7 @@ class TestPlaybookLanguageSwitch(unittest.TestCase):
         body = response.body.decode("utf-8")
         self.assertEqual(response.status_code, 200)
         self.assertIn("客户 000001", body)
+        self.assertNotIn('action="/asset-planner/analyze"', body)
 
 
 if __name__ == "__main__":

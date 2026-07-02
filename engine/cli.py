@@ -14,6 +14,7 @@ from engine.profile_loader import ProfileLoadError, load_profile
 from engine.projection import (project_to_nodes, project_to_terminal,
                                 project_yearly, project_yearly_with_returns,
                                 project_buckets_with_returns)
+from insurance_planner.logic import analyze_profile as analyze_insurance_profile
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -75,6 +76,7 @@ def _generate_playbook(
     yearly = project_yearly(profile)
     return_snapshots = ()
     bucket_result = None
+    insurance_result = analyze_insurance_profile(profile)
     try:
         return_snapshots = project_yearly_with_returns(profile, assumptions)
         bucket_result = project_buckets_with_returns(profile, assumptions, plan)
@@ -96,6 +98,7 @@ def _generate_playbook(
         yearly_snapshots=yearly,
         return_snapshots=return_snapshots,
         bucket_result=bucket_result,
+        insurance_result=insurance_result,
         lang=lang,
     )
 

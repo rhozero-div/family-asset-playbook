@@ -25,6 +25,10 @@ family:
       medical_premium: 0
       medical_pay_years: 0
       hci_coverage: 0
+      hci_premium: 0
+      hci_pay_years: 0
+      other_insurance_premium: 0
+      other_insurance_pay_years: 0
       healthcare_starting_annual: 20000
       healthcare_growth_rate: 0.05
       healthcare_annual_cap: 80000
@@ -48,6 +52,10 @@ family:
       medical_premium: 0
       medical_pay_years: 0
       hci_coverage: 0
+      hci_premium: 0
+      hci_pay_years: 0
+      other_insurance_premium: 0
+      other_insurance_pay_years: 0
       healthcare_starting_annual: 0
       healthcare_growth_rate: 0.05
       healthcare_annual_cap: 0
@@ -71,6 +79,10 @@ family:
       medical_premium: 0
       medical_pay_years: 0
       hci_coverage: 0
+      hci_premium: 0
+      hci_pay_years: 0
+      other_insurance_premium: 0
+      other_insurance_pay_years: 0
       healthcare_starting_annual: 0
       healthcare_growth_rate: 0.05
       healthcare_annual_cap: 0
@@ -99,7 +111,7 @@ income:
     horizon_years: 10
     annual_growth_rate: 0.04       # 4% annualized
     confidence: "medium"           # low / medium / high
-  monthly_living_expense: 25000    # monthly household spending excluding mortgage
+  monthly_living_expense: 25000    # monthly household spending excluding insurance premiums and mortgage
   retirement:
     monthly_pension: 5000
     monthly_annuity: 3000
@@ -202,6 +214,15 @@ assets:
 assumptions:
   projection:
     reimbursement_rate: 0.80
+  insurance_planner:
+    term_multiplier_with_dependents: 7.0
+    term_multiplier_without_dependents: 4.0
+    ci_income_multiple: 3.0
+    ci_expense_years: 5.0
+    child_ci_target: 300000
+    elder_ci_target: 300000
+    adult_independence_buffer: 1.2
+    include_hci_upgrade: true
 
 # === Advisor Assessment (optional, completed manually) ===
 advisor_assessment:

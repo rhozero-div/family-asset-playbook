@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>资产规划原型</title>
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
+  <style>
+    .planner-shell { max-width: 1100px; margin: 0 auto; }
+    .planner-hero { border: 1px solid #dbe6f0; border-radius: 14px; padding: 1.1rem 1.2rem; margin-bottom: 1rem; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%); }
+    .planner-hero h1 { margin: 0 0 0.35rem; font-size: 1.55rem; color: #16324f; }
+    .planner-hero p { margin: 0.2rem 0; color: #566579; }
+    .planner-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; }
+    .planner-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.05rem; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .planner-card h3 { margin: 0 0 0.75rem; color: #1f3b57; }
+    .planner-card p { color: #546274; }
+    .planner-links a { display: inline-block; margin-right: 0.6rem; margin-bottom: 0.6rem; }
+    .planner-textarea { width: 100%; min-height: 620px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; line-height: 1.5; border: 1px solid #cbd5e0; border-radius: 8px; padding: 0.9rem; }
+    .helper-list { margin: 0; padding-left: 1.1rem; color: #526172; }
+    .helper-list li { margin-bottom: 0.5rem; }
+    .field-inline { display: flex; gap: 0.8rem; align-items: end; margin-bottom: 1rem; flex-wrap: wrap; }
+    .field-inline .field { flex: 1; min-width: 180px; }
+    .field-inline label { display: block; font-weight: 600; margin-bottom: 0.35rem; color: #3f4f61; }
+    .field-inline input[type="number"], .field-inline input[type="file"] { width: 100%; }
+    @media (max-width: 900px) { .planner-grid { grid-template-columns: 1fr; } .planner-textarea { min-height: 420px; } }
+  </style>
+</head>
+<body>
+  <main class="container planner-shell">
+    <section class="planner-hero">
+      <h1>资产规划原型</h1>
+      <p>这是一版面向顾问的资产规划工作台。它会读取现有问卷 YAML，先看重大节点覆盖和资金分层，再把阶段权重与资金分层结构整理成可讨论的中间层。</p>
+      <p>它不替代最终客户剧本，而是帮助顾问在“问卷事实”和“客户剧本”之间先跑通资产配置思路。</p>
+    </section>
+
+    {% if error %}
+    <div class="error-banner"><strong>错误：</strong>{{ error }}</div>
+    {% endif %}
+
+    <div class="planner-grid">
+      <section class="planner-card">
+        <h3>输入问卷 YAML</h3>
+        {% if sample_name %}
+        <div class="success-banner">已载入：{{ sample_name }}</div>
+        {% endif %}
+        <form action="/asset-planner/analyze" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="client_code" value="{{ client_code }}">
+          <div class="field-inline">
+            <div class="field">
+              <label for="current_year">当前年份</label>
+              <input type="number" id="current_year" name="current_year" min="2020" max="2100" value="{{ current_year }}">
+            </div>
+            <div class="field">
+              <label for="yaml_file">或上传 YAML 文件</label>
+              <input type="file" id="yaml_file" name="yaml_file" accept=".yaml,.yml,text/yaml,text/plain">
+            </div>
+          </div>
+          <textarea id="yaml_content" name="yaml_content" class="planner-textarea" placeholder="把问卷导出的 YAML 粘贴到这里">{{ yaml_content }}</textarea>
+          <div style="margin-top: 1rem;">
+            <button type="submit" class="btn-primary">查看资产规划分析</button>
+            <button type="submit" formaction="/insurance-planner/analyze" class="btn-secondary">转到保险规划</button>
+            <button type="submit" formaction="/questionnaire/generate" class="btn-secondary">直接生成剧本</button>
+            <button type="submit" formaction="/questionnaire/review" class="btn-secondary">返回问卷</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="planner-card">
+        <h3>这版会做什么</h3>
+        <ul class="helper-list">
+          <li>先判断重大节点按当前资料能否覆盖，最早缺口会出现在什么地方。</li>
+          <li>再把应急层、事件资金层和富余资金层梳理出来，方便顾问看资金分层是不是顺。</li>
+          <li>把当前阶段权重、收益假设和资金分层结构单独拉出来，作为未来显式资产规划模块的原型。</li>
+        </ul>
+
+        <h3 style="margin-top: 1.2rem;">快捷入口</h3>
+        <div class="planner-links">
+          <a href="/asset-planner/sample-wang" class="btn-secondary">王先生示例</a>
+          <a href="/insurance-planner" class="btn-secondary">保险规划</a>
+          {% if storage_enabled %}
+            {% for client in clients %}
+            <a href="/asset-planner/load/{{ client.code }}" class="btn-secondary">{{ client.name }}（{{ client.code }}）</a>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

@@ -67,6 +67,7 @@ body {
 .success-banner { background: #d1fae5; color: #065f46; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.95rem; border: 1px solid #a7f3d0; }
 .success-banner a { color: #047857; font-weight: 600; }
 .stage-table-wrapper { overflow-x: auto; margin: 1rem 0; }
+.table-scroll { overflow-x: auto; margin-top: 0.4rem; }
 .stage-table { border-collapse: collapse; font-size: 0.8rem; width: 100%; }
 .stage-table th, .stage-table td { border: 1px solid #d1d5db; padding: 0.2rem 0.35rem; text-align: right; white-space: nowrap; }
 .stage-table th { background: #f3f4f6; font-weight: 600; text-align: center; white-space: normal; word-break: break-all; max-width: 55px; font-size: 0.75rem; }
@@ -570,6 +571,45 @@ body {
   outline: none;
   border-color: var(--q-accent);
   box-shadow: 0 0 0 2px var(--q-accent-ring);
+}
+.insurance-card-list {
+  display: grid;
+  gap: 0.9rem;
+}
+.insurance-member-card {
+  padding: 0.95rem 1rem;
+}
+.insurance-member-card .panel-subtitle,
+.insurance-member-card .insurance-member-title {
+  margin-bottom: 0.35rem;
+}
+.insurance-member-note {
+  font-size: var(--q-hint-size);
+  color: #64748b;
+  margin: 0 0 0.7rem;
+  line-height: 1.5;
+}
+.insurance-table {
+  table-layout: fixed;
+}
+.insurance-table th:first-child,
+.insurance-table td:first-child {
+  width: 26%;
+}
+.insurance-table th:nth-child(2),
+.insurance-table td:nth-child(2) {
+  width: 28%;
+}
+.insurance-table th:nth-child(3),
+.insurance-table td:nth-child(3),
+.insurance-table th:nth-child(4),
+.insurance-table td:nth-child(4) {
+  width: 23%;
+}
+.insurance-table td,
+.insurance-table th {
+  white-space: normal;
+  word-break: break-word;
 }
 .table-action-col {
   width: 44px;

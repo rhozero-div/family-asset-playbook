@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>保险配置回填页</title>
+  <link rel="stylesheet" href="/static/style.css?v=20260702-01">
+  <style>
+    .recommend-shell { max-width: 1120px; margin: 0 auto; }
+    .recommend-hero { border: 1px solid #dbe6f0; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 1rem; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%); }
+    .recommend-hero h1 { margin: 0 0 0.35rem; color: #16324f; font-size: 1.55rem; }
+    .recommend-hero p { margin: 0.25rem 0; color: #5b6979; }
+    .recommend-section { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.05rem; background: #fff; margin-bottom: 1rem; }
+    .recommend-section h2 { margin: 0 0 0.75rem; color: #2b6cb0; font-size: 1.2rem; }
+    .recommend-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .recommend-note { color: #607080; font-size: 0.92rem; margin: 0.2rem 0 0.8rem; }
+    .recommend-member-list { display: grid; gap: 0.9rem; }
+    .recommend-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; background: #fcfdff; margin-bottom: 0; }
+    .recommend-card h3 { margin: 0 0 0.35rem; color: #1f3b57; font-size: 1.05rem; }
+    .recommend-inline-note { color: #607080; font-size: 0.86rem; margin: 0.1rem 0 0.75rem; }
+    .recommend-submit { margin-top: 0.9rem; }
+    .table-scroll { overflow-x: auto; margin-top: 0.6rem; }
+  </style>
+</head>
+<body>
+  <main class="container recommend-shell">
+    <div class="recommend-actions">
+      <form action="/questionnaire/review" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <button type="submit" class="btn-secondary">返回问卷</button>
+      </form>
+      <form action="/questionnaire/generate" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <button type="submit" class="btn-secondary">按原问卷生成剧本</button>
+      </form>
+      <a href="/" class="btn-secondary">返回首页</a>
+    </div>
+
+    <section class="recommend-hero">
+      <h1>保险配置回填页</h1>
+      <p>这里展示的是推荐方案对应的新增保险配置，不替换原问卷里的现有保单。点击重算时，系统会把这里的新增保额与新增保费叠加回原问卷，再重新生成剧本。</p>
+      <p>保费字段默认填 0，由顾问自行补充。剩余缴费年数已按测算口径给出一版默认值，也可以手动调整。</p>
+    </section>
+
+    {% for scenario in [
+      {"key": "core", "label": "方案 A：优先补足核心保障", "rows": plan_a_rows},
+      {"key": "balanced", "label": "方案 B：尽量都配一些，但单项保额更克制", "rows": plan_b_rows}
+    ] %}
+    <section class="recommend-section" id="scenario-{{ scenario.key }}">
+      <h2>{{ scenario.label }}</h2>
+      <p class="recommend-note">本页字段沿用问卷第 6 部分的保险录入口径，但这里填写的是新增方案。当前口径仅用于重算，不会自动覆盖原始问卷。</p>
+      <form action="/insurance-planner/recalculate" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <input type="hidden" name="scenario_key" value="{{ scenario.key }}">
+        <div class="recommend-member-list">
+        {% for row in scenario.rows %}
+        <div class="recommend-card insurance-member-card">
+          <h3>{{ row.member_name }}</h3>
+          <div class="recommend-inline-note insurance-member-note">
+            当前口径：基础医疗{% if row.current_medical %}已覆盖{% else %}未覆盖{% endif %}；
+            定寿 {{ "{:,.0f}".format(row.current_term) }}；
+            重疾 {{ "{:,.0f}".format(row.current_ci) }}；
+            高端医疗 {{ "{:,.0f}".format(row.current_hci) }}
+          </div>
+          <div class="table-scroll">
+            <table class="form-table insurance-table">
+              <thead>
+                <tr>
+                  <th class="align-left">险种</th>
+                  <th>新增状态/保额</th>
+                  <th>新增年保费</th>
+                  <th>剩余缴费年数</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="align-left">基础医疗报销</td>
+                  <td>
+                    <select name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_medical">
+                      <option value="">—</option>
+                      <option value="true"{% if row.medical_add %} selected{% endif %}>是</option>
+                    </select>
+                  </td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_medical_premium" value="0" min="0" step="100"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_medical_pay_years" value="{{ row.medical_pay_years }}" min="0" max="99"></td>
+                </tr>
+                <tr>
+                  <td class="align-left">定期寿险</td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_term_cov" value="{{ row.term_cov }}" min="0" step="10000"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_term_premium" value="0" min="0" step="100"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_term_pay_years" value="{{ row.term_pay_years }}" min="0" max="99"></td>
+                </tr>
+                <tr>
+                  <td class="align-left">重疾险</td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_ci_cov" value="{{ row.ci_cov }}" min="0" step="10000"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_ci_premium" value="0" min="0" step="100"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_ci_pay_years" value="{{ row.ci_pay_years }}" min="0" max="99"></td>
+                </tr>
+                <tr>
+                  <td class="align-left">高端医疗</td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_hci_cov" value="{{ row.hci_cov }}" min="0" step="10000"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_hci_premium" value="0" min="0" step="100"></td>
+                  <td><input type="number" name="plan_{{ 'a' if scenario.key == 'core' else 'b' }}_{{ row.idx }}_hci_pay_years" value="{{ row.hci_pay_years }}" min="0" max="99"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+        </div>
+        <div class="recommend-submit">
+          <button type="submit" class="btn-primary">用{{ "方案 A" if scenario.key == "core" else "方案 B" }}配置重新测算生成剧本</button>
+        </div>
+      </form>
+    </section>
+    {% endfor %}
+  </main>
+
+  {% if focus_plan %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var el = document.getElementById('scenario-{{ focus_plan }}');
+    if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+  });
+  </script>
+  {% endif %}
+</body>
+</html>

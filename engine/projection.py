@@ -110,9 +110,9 @@ def _premium_total_annual(profile: ClientProfile, current_year: int, yr: int) ->
     # 判断是否有逐人保费数据
     has_per_person = any(
         m.term_life_premium > 0 or m.critical_illness_premium > 0 or m.medical_premium > 0
-        or m.hci_coverage > 0
+        or m.hci_premium > 0 or m.other_insurance_premium > 0 or m.hci_coverage > 0
         for m in profile.members
-    )
+    ) or any(item.get("premium", 0) > 0 for item in profile.savings)
     if has_per_person:
         total = 0.0
         for m in profile.members:
@@ -123,8 +123,21 @@ def _premium_total_annual(profile: ClientProfile, current_year: int, yr: int) ->
                 total += m.critical_illness_premium
             if m.medical_pay_years <= 0 or yrs_since < m.medical_pay_years:
                 total += m.medical_premium
+            if m.hci_pay_years <= 0 or yrs_since < m.hci_pay_years:
+                total += m.hci_premium
+            if m.other_insurance_pay_years <= 0 or yrs_since < m.other_insurance_pay_years:
+                total += m.other_insurance_premium
+        for item in profile.savings:
+            pay_years = int(item.get("pay_years", 0) or 0)
+            premium = float(item.get("premium", 0) or 0)
+            if pay_years <= 0 or yrs_since < pay_years:
+                total += premium
         return total
-    return _ci_premium_annual(profile, current_year, yr) + _term_life_premium_annual(profile, current_year, yr)
+    total = _ci_premium_annual(profile, current_year, yr) + _term_life_premium_annual(profile, current_year, yr)
+    yrs_since = yr - current_year
+    if profile.insurance_medical_pay_years <= 0 or yrs_since < profile.insurance_medical_pay_years:
+        total += profile.insurance_medical_premium
+    return total if total > 0 else profile.insurance_total_annual_premium
 
 
 def _annual_cashflow_per_person(

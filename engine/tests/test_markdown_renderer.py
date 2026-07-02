@@ -20,6 +20,7 @@ from engine.projection import (  # noqa: E402
     project_yearly,
     project_buckets_with_returns,
 )
+from insurance_planner.logic import analyze_profile as analyze_insurance_profile  # noqa: E402
 
 SAMPLE_YAML = ROOT / "samples" / "client-profile.example.yaml"
 ASSUMPTIONS_PATH = ROOT / "handbook" / "03-asset-assumptions.md"
@@ -53,6 +54,7 @@ def _render(**kw):
     requested_bucket_result = kw.get("bucket_result", _DEFAULT)
     include_bucket_result = requested_bucket_result is _DEFAULT
     p, projs, plan, term, yearly, _, bucket_result = _build(include_bucket_result=include_bucket_result)
+    insurance_result = kw.get("insurance_result", analyze_insurance_profile(kw.get("profile", p)))
     return render_playbook(
         profile=kw.get("profile", p),
         plan=kw.get("plan", plan),
@@ -61,6 +63,7 @@ def _render(**kw):
         terminal_steps=kw.get("terminal_steps", term),
         yearly_snapshots=kw.get("yearly_snapshots", yearly),
         bucket_result=bucket_result if requested_bucket_result is _DEFAULT else requested_bucket_result,
+        insurance_result=insurance_result,
     )
 
 
@@ -81,6 +84,7 @@ class TestRenderPlaybook(unittest.TestCase):
             "A. 客户情况概览",
             "B. 资产推演",
             "C. 资产配置执行方案",
+            "D. 保险配置建议",
         ):
             self.assertIn(label, md)
 
@@ -326,6 +330,24 @@ class TestRenderPlaybook(unittest.TestCase):
         md = _render(bucket_result=None)
         self.assertIn("累积资产", md)
         self.assertIn("逐年净现金流序列", md)
+
+    def test_renders_insurance_section_with_scenarios(self):
+        md = _render(bucket_result=None)
+        self.assertIn("## D. 保险配置建议", md)
+        self.assertIn("识别到的主要保障缺口", md)
+        self.assertIn("方案 A：优先补足核心保障", md)
+        self.assertIn("方案 B：尽量都配一些，但单项保额更克制", md)
+
+    def test_insurance_section_keeps_coverage_charts_only(self):
+        md = _render(bucket_result=None)
+        self.assertIn('class="insurance-member-row"', md)
+        self.assertIn("playbook-gap-chart-", md)
+        self.assertIn("playbook-core-coverage-chart-", md)
+        self.assertIn("playbook-balanced-coverage-chart-", md)
+        self.assertNotIn("playbook-gap-premium-chart-", md)
+        self.assertNotIn("playbook-core-premium-chart-", md)
+        self.assertNotIn("playbook-balanced-premium-chart-", md)
+        self.assertNotIn("年保费会从", md)
 
     def test_rendered_return_chart_title_uses_measurement_end_year(self):
         profile, projections, plan, terminal, yearly, assumptions, _ = _build(include_bucket_result=False)

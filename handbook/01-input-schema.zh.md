@@ -63,7 +63,7 @@ English version: [01-input-schema.md](01-input-schema.md)
 - `role`
 - `annual_income`
 - `income_start_age`
-- `future_annual_income`
+- `income_start_annual`
 - `monthly_expense`
 - `retirement_age`
 - `retirement_pension`
@@ -125,13 +125,23 @@ English version: [01-input-schema.md](01-input-schema.md)
 
 典型字段包括：
 
-- 定寿保额与保费
-- 重疾保额与保费
-- 医疗险配置标记与保费
+- 基础医疗是否覆盖、年保费、剩余缴费年数
+- 定寿保额、年保费、剩余缴费年数
+- 重疾保额、年保费、剩余缴费年数
+- 高端医疗保额、年保费、剩余缴费年数
+- 其他保险年保费、剩余缴费年数
+- 医疗报销比例
+- 退休医疗年支出、增长率、年度封顶
 - 储蓄险金额与保费
 - 储蓄险关联 bucket
 
-当前方法论主要用它识别结构缺口，而不是做产品推荐。
+当前问卷界面里，第 6 部分已经是成员驱动结构：
+
+- 每个家庭成员各自一个区块
+- 区块内每个险种一行
+- 储蓄险仍保留为单独的家庭级多行录入
+
+当前方法论主要用它识别结构缺口，并支持从剧本里的保险回填页做增量重算，而不是做产品推荐。
 
 ## 11. 顾问评估层
 

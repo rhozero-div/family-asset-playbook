@@ -61,7 +61,7 @@ Each member may provide fields such as:
 - `role`
 - `annual_income`
 - `income_start_age`
-- `future_annual_income`
+- `income_start_annual`
 - `monthly_expense`
 - `retirement_age`
 - `retirement_pension`
@@ -148,13 +148,23 @@ The current insurance input supports broad structure review rather than full pro
 
 Relevant fields can include:
 
-- term life coverage and premium
-- critical illness coverage and premium
-- medical coverage flag and premium
+- medical coverage flag, annual premium, and remaining pay years
+- term life coverage, annual premium, and remaining pay years
+- critical illness coverage, annual premium, and remaining pay years
+- high-end medical coverage, annual premium, and remaining pay years
+- other insurance annual premium and remaining pay years
+- reimbursement ratio
+- retirement healthcare annual spending, growth rate, and annual cap
 - savings insurance amount and premium
 - linked bucket for savings insurance
 
-The methodology currently uses this to identify structure gaps, not product recommendations.
+In the current questionnaire UI, section 6 is member-driven:
+
+- one member block per family member
+- one row per insurance product inside that member block
+- savings insurance remains a separate multi-row household section
+
+The methodology currently uses this to identify structure gaps and to support incremental insurance re-runs from the playbook, not product recommendations.
 
 ## 11. Advisor Assessment
 

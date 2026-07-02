@@ -39,13 +39,15 @@ The current playbook is organized in this order:
 2. Client Overview
 3. Asset Projection
 4. Allocation Execution Plan
+5. Insurance Structure Suggestion
 
 That reading order is deliberate:
 
 - conclusion first
 - facts next
 - projection after that
-- execution logic last
+- execution logic after that
+- insurance suggestion last
 
 ## 4. Executive Summary
 
@@ -110,6 +112,14 @@ They are expected to help the client understand:
 - funding order
 - range rather than single-point certainty
 - the difference between near-term and long-term money
+- insurance gaps and the difference between the two insurance suggestion paths
+
+Within the insurance section specifically:
+
+- the playbook itself remains client-facing
+- Plan A and Plan B can open an advisor-side insurance input page
+- that page is for incremental additions only
+- re-running from that page merges the added insurance back onto the original questionnaire and regenerates the playbook
 
 ## 9. Tone Requirements
 

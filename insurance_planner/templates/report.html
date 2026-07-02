@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>保险规划建议</title>
+  <link rel="stylesheet" href="/static/style.css?v=20260701-01">
+  <script src="/static/chart.umd.min.js?v=4.4.7"></script>
+  <style>
+    .report-shell { max-width: 1180px; margin: 0 auto; }
+    .report-hero { border: 1px solid #dbe6f0; border-radius: 14px; padding: 1.05rem 1.15rem; margin-bottom: 1rem; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%); }
+    .report-hero h1 { margin: 0 0 0.3rem; font-size: 1.5rem; color: #16324f; }
+    .report-hero p { margin: 0.2rem 0; color: #566579; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin: 1rem 0; }
+    .metric-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem; background: #fff; }
+    .metric-label { color: #637487; font-size: 0.86rem; margin-bottom: 0.3rem; }
+    .metric-value { color: #16324f; font-size: 1.15rem; font-weight: 700; }
+    .section-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.05rem; background: #fff; margin-bottom: 1rem; }
+    .section-card h2 { margin: 0 0 0.8rem; color: #1f3b57; font-size: 1.2rem; }
+    .section-card h3 { margin: 1rem 0 0.6rem; color: #2b6cb0; }
+    .summary-list { margin: 0; padding-left: 1.1rem; color: #425266; }
+    .summary-list li { margin-bottom: 0.45rem; }
+    .scenario-header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; flex-wrap: wrap; margin-bottom: 0.7rem; }
+    .scenario-badge { background: #edf2f7; color: #314559; border-radius: 999px; padding: 0.25rem 0.7rem; font-size: 0.84rem; font-weight: 600; }
+    .hint-block { border-left: 4px solid #cbd5e0; padding-left: 0.85rem; color: #4a5568; margin: 0.8rem 0 0; }
+    .coverage-low { color: #a33a2c; font-weight: 700; }
+    .coverage-mid { color: #9a6a11; font-weight: 700; }
+    .coverage-high { color: #2f855a; font-weight: 700; }
+    .actions { margin-bottom: 1rem; display: flex; gap: 0.7rem; flex-wrap: wrap; }
+    .member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .chart-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem; background: #fbfdff; }
+    .chart-card h4 { margin: 0 0 0.65rem; color: #244564; }
+    .chart-card .chart-box { position: relative; width: 100%; height: 280px; }
+    .status-chip { display: inline-block; border-radius: 999px; padding: 0.18rem 0.6rem; font-size: 0.8rem; font-weight: 600; margin-right: 0.4rem; }
+    .status-on { background: #dcfce7; color: #166534; }
+    .status-off { background: #fee2e2; color: #991b1b; }
+    .member-block { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-top: 1rem; background: #fcfdff; }
+    .member-block h3 { margin-top: 0; margin-bottom: 0.4rem; color: #1f3b57; }
+    @media (max-width: 960px) { .metric-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) { .member-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) { .metric-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container report-shell">
+    <div class="actions">
+      <form action="/questionnaire/review" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <button type="submit" class="btn-secondary">返回问卷</button>
+      </form>
+      <form action="/asset-planner/analyze" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <button type="submit" class="btn-secondary">打开资产规划</button>
+      </form>
+      <form action="/questionnaire/generate" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <button type="submit" class="btn-secondary">生成剧本</button>
+      </form>
+      <a href="/insurance-planner" class="btn-secondary">重新输入 YAML</a>
+      <a href="/insurance-planner/sample-wang" class="btn-secondary">查看示例</a>
+      <a href="/" class="btn-secondary">返回首页</a>
+    </div>
+
+    <section class="report-hero">
+      <h1>{{ result.profile.family_name }}家庭保险规划建议</h1>
+      <p>这是一份独立于资产剧本的保险结构建议页。它只回答三个问题：先保什么、能保到什么程度、在预算约束下如何排优先级。</p>
+      <p>当前版本仍使用 mock 保费曲线，因此适合做方案方向判断，不适合直接当作真实报价或投保清单。</p>
+    </section>
+
+    <section class="section-card">
+      <h2>家庭快照</h2>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">家庭年收入</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.annual_income) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">当前月结余</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.monthly_current_surplus) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">现有年保费</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.existing_annual_premium) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">建议总年保费上限</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.premium_budget_annual) }}</div>
+        </div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">金融资产</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.total_financial_assets) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">负债余额</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.total_outstanding_debt) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">未来 10 年重大支出</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.next_10y_major_events) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">未来 10 年测算缺口</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.metrics.next_10y_negative_gap) }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2>规划逻辑</h2>
+      <ul class="summary-list">
+        {% for item in result.planning_principles %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      {% if result.warnings %}
+      <div class="hint-block">
+        {% for item in result.warnings %}
+        <div>{{ item }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="section-card">
+      <h2>客户目标参数</h2>
+      <table class="form-table">
+        <tbody>
+          <tr>
+            <th>总年保费上限</th>
+            <td>
+              {% if result.preferences.manual_premium_cap_annual is not none %}
+              手动设为 ¥{{ "{:,.0f}".format(result.preferences.manual_premium_cap_annual) }}
+              {% else %}
+              未手动设定，当前按系统预算口径自动测算
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th>自动预算比例</th>
+            <td>
+              {% if result.preferences.auto_budget_ratio is not none %}
+              年收入的 {{ "{:.1f}".format(result.preferences.auto_budget_ratio * 100) }}%
+              {% else %}
+              未手动设定，当前按现金流压力自动判断
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th>定寿目标倍数</th>
+            <td>高责任家庭 {{ result.preferences.term_multiplier_with_dependents }} 倍年收入；低责任家庭 {{ result.preferences.term_multiplier_without_dependents }} 倍年收入</td>
+          </tr>
+          <tr>
+            <th>重疾目标口径</th>
+            <td>{{ result.preferences.ci_income_multiple }} 倍年收入，或 {{ result.preferences.ci_expense_years }} 年支出口径，取较高者</td>
+          </tr>
+          <tr>
+            <th>高端医疗升级</th>
+            <td>{% if result.preferences.include_hci_upgrade %}纳入建议范围{% else %}本次不纳入建议范围{% endif %}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section-card">
+      <h2>识别到的保障缺口</h2>
+      <table class="form-table">
+        <thead>
+          <tr>
+            <th>成员</th>
+            <th>保障类型</th>
+            <th>优先级</th>
+            <th>当前状态</th>
+            <th>目标口径</th>
+            <th>补足后新增年保费（mock）</th>
+            <th>逻辑说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for need in result.needs %}
+          <tr>
+            <td>{{ need.member_name }}</td>
+            <td>{{ need.product_label }}</td>
+            <td>P{{ need.priority_rank }}</td>
+            <td>{{ need.current_status }}</td>
+            <td>{{ need.target_status }}</td>
+            <td>¥{{ "{:,.0f}".format(need.full_additional_annual_premium) }}</td>
+            <td>{{ need.rationale }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% for member in result.member_views %}
+      <div class="member-block">
+        <h3>{{ member.member_name }}</h3>
+        <p style="margin: 0 0 0.75rem; color: #5a6779;">医保/医疗报销状态：
+          <span class="status-chip {% if member.medical_current %}status-on{% else %}status-off{% endif %}">当前{% if member.medical_current %}已覆盖{% else %}缺失{% endif %}</span>
+          <span class="status-chip {% if member.medical_target %}status-on{% else %}status-off{% endif %}">目标{% if member.medical_target %}应覆盖{% else %}不重点配置{% endif %}</span>
+        </p>
+        <div class="member-grid">
+          <div class="chart-card">
+            <h4>保障缺口对比</h4>
+            <div class="chart-box"><canvas id="gap-chart-{{ loop.index0 }}"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h4>补足后的年保费压力</h4>
+            <div class="chart-box"><canvas id="gap-premium-chart-{{ loop.index0 }}"></canvas></div>
+          </div>
+        </div>
+        <ul class="summary-list" style="margin-top: 0.9rem;">
+          {% for line in member.gap_explanation %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </section>
+
+    {% for plan in [result.core_plan, result.balanced_plan] %}
+    <section class="section-card">
+      <div class="scenario-header">
+        <div>
+          <h2 style="margin-bottom: 0.3rem;">{{ plan.scenario_label }}</h2>
+          <div class="scenario-badge">新增年保费预算约 ¥{{ "{:,.0f}".format(plan.budget_annual) }}</div>
+        </div>
+        <div>
+          <div><strong>本方案预计使用：</strong>¥{{ "{:,.0f}".format(plan.premium_used_annual) }}/年</div>
+          <div><strong>折合月保费：</strong>¥{{ "{:,.0f}".format(plan.premium_used_monthly) }}/月</div>
+        </div>
+      </div>
+      <ul class="summary-list">
+        {% for line in plan.summary %}
+        <li>{{ line }}</li>
+        {% endfor %}
+      </ul>
+
+      <table class="form-table" style="margin-top: 0.9rem;">
+        <thead>
+          <tr>
+            <th>成员</th>
+            <th>保障类型</th>
+            <th>当前保额/状态</th>
+            <th>目标保额/状态</th>
+            <th>本方案建议新增</th>
+            <th>预计新增年保费</th>
+            <th>完成度</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in plan.allocations %}
+          {% set cls = 'coverage-low' if item.fill_ratio < 0.35 else ('coverage-mid' if item.fill_ratio < 0.8 else 'coverage-high') %}
+          <tr>
+            <td>{{ item.member_name }}</td>
+            <td>{{ item.product_label }}</td>
+            <td>{{ item.current_status }}</td>
+            <td>{{ item.target_status }}</td>
+            <td>
+              {% if item.recommended_additional_coverage > 0 %}
+                {{ "{:,.0f}".format(item.recommended_additional_coverage) }} 元
+              {% else %}
+                暂不新增
+              {% endif %}
+            </td>
+            <td>¥{{ "{:,.0f}".format(item.premium_used) }}</td>
+            <td><span class="{{ cls }}">{{ "{:.0%}".format(item.fill_ratio) }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% for member in result.member_views %}
+      <div class="member-block">
+        <h3>{{ member.member_name }}</h3>
+        <p style="margin: 0 0 0.75rem; color: #5a6779;">医保/医疗报销状态：
+          {% if plan.scenario_key == 'core' %}
+          <span class="status-chip {% if member.medical_current %}status-on{% else %}status-off{% endif %}">当前{% if member.medical_current %}已覆盖{% else %}缺失{% endif %}</span>
+          <span class="status-chip {% if member.medical_plan_a %}status-on{% else %}status-off{% endif %}">方案A{% if member.medical_plan_a %}纳入{% else %}未纳入{% endif %}</span>
+          {% else %}
+          <span class="status-chip {% if member.medical_current %}status-on{% else %}status-off{% endif %}">当前{% if member.medical_current %}已覆盖{% else %}缺失{% endif %}</span>
+          <span class="status-chip {% if member.medical_plan_b %}status-on{% else %}status-off{% endif %}">方案B{% if member.medical_plan_b %}纳入{% else %}未纳入{% endif %}</span>
+          {% endif %}
+        </p>
+        <div class="member-grid">
+          <div class="chart-card">
+            <h4>保额前后对比</h4>
+            <div class="chart-box"><canvas id="{{ plan.scenario_key }}-coverage-chart-{{ loop.index0 }}"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h4>保费支出对比</h4>
+            <div class="chart-box"><canvas id="{{ plan.scenario_key }}-premium-chart-{{ loop.index0 }}"></canvas></div>
+          </div>
+        </div>
+        <ul class="summary-list" style="margin-top: 0.9rem;">
+          {% if plan.scenario_key == 'core' %}
+            {% for line in member.plan_a_explanation %}
+            <li>{{ line }}</li>
+            {% endfor %}
+          {% else %}
+            {% for line in member.plan_b_explanation %}
+            <li>{{ line }}</li>
+            {% endfor %}
+          {% endif %}
+        </ul>
+      </div>
+      {% endfor %}
+    </section>
+    {% endfor %}
+
+    <section class="section-card">
+      <h2>当前假设与边界</h2>
+      <ul class="summary-list">
+        {% for item in result.assumptions %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </main>
+  <script id="member-chart-data" type="application/json">{{ chart_payload|safe }}</script>
+  <script>
+    (function() {
+      var el = document.getElementById('member-chart-data');
+      if (!el) return;
+      var members;
+      try { members = JSON.parse(el.textContent); } catch (err) { members = []; }
+      var fmt = function(v) {
+        if (Math.abs(v) >= 10000) return '¥' + (v / 10000).toFixed(0) + '万';
+        return '¥' + Number(v).toFixed(0);
+      };
+      members.forEach(function(member, idx) {
+        var gapCtx = document.getElementById('gap-chart-' + idx);
+        if (gapCtx) {
+          new Chart(gapCtx, {
+            type: 'bar',
+            data: {
+              labels: member.coverage_labels,
+              datasets: [
+                { label: '当前', data: member.current_coverage, backgroundColor: 'rgba(100, 116, 139, 0.75)' },
+                { label: '目标', data: member.target_coverage, backgroundColor: 'rgba(37, 99, 235, 0.75)' }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } },
+              scales: { y: { ticks: { callback: fmt } } }
+            }
+          });
+        }
+
+        var gapPremiumCtx = document.getElementById('gap-premium-chart-' + idx);
+        if (gapPremiumCtx) {
+          new Chart(gapPremiumCtx, {
+            type: 'bar',
+            data: {
+              labels: member.premium_labels,
+              datasets: [
+                {
+                  label: '当前',
+                  data: member.current_premium_by_product,
+                  backgroundColor: 'rgba(100,116,139,0.75)'
+                },
+                {
+                  label: '补足目标后',
+                  data: member.target_premium_by_product,
+                  backgroundColor: 'rgba(37,99,235,0.72)'
+                },
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: { y: { ticks: { callback: fmt } } }
+            }
+          });
+        }
+
+        [
+          ['core', member.plan_a_coverage, '方案A', 'rgba(22, 163, 74, 0.72)'],
+          ['balanced', member.plan_b_coverage, '方案B', 'rgba(234, 179, 8, 0.75)']
+        ].forEach(function(entry) {
+          var key = entry[0];
+          var coverageData = entry[1];
+          var planLabel = entry[2];
+          var color = entry[3];
+
+          var coverageCtx = document.getElementById(key + '-coverage-chart-' + idx);
+          if (coverageCtx) {
+            new Chart(coverageCtx, {
+              type: 'bar',
+              data: {
+                labels: member.coverage_labels,
+                datasets: [
+                  { label: '当前', data: member.current_coverage, backgroundColor: 'rgba(100, 116, 139, 0.75)' },
+                  { label: planLabel, data: coverageData, backgroundColor: color },
+                  { label: '目标', data: member.target_coverage, backgroundColor: 'rgba(37, 99, 235, 0.28)', borderColor: 'rgb(37, 99, 235)', borderWidth: 1 }
+                ]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { ticks: { callback: fmt } } }
+              }
+            });
+          }
+
+          var premiumCtx = document.getElementById(key + '-premium-chart-' + idx);
+          if (premiumCtx) {
+            new Chart(premiumCtx, {
+              type: 'bar',
+              data: {
+                labels: member.premium_labels,
+                datasets: [
+                  { label: '当前', data: member.current_premium_by_product, backgroundColor: 'rgba(100,116,139,0.75)' },
+                  {
+                    label: planLabel,
+                    data: key === 'core' ? member.plan_a_premium_by_product : member.plan_b_premium_by_product,
+                    backgroundColor: color
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { ticks: { callback: fmt } } }
+              }
+            });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

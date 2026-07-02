@@ -2,23 +2,55 @@
 {% block title %}{% if lang == "en" %}FAPM — Playbook{% else %}FAPM — 客户剧本{% endif %}{% endblock %}
 {% block head_extra %}
 <script src="/static/chart.umd.min.js?v=4.4.7"></script>
+<style>
+  .playbook-actions form { display: inline-block; margin: 0; }
+  .btn-link { background: none; border: 0; padding: 0; color: #2563eb; cursor: pointer; font: inherit; }
+  .insurance-member-row { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 1rem; margin: 0.9rem 0 1rem; align-items: start; }
+  .insurance-chart-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem; background: #fbfdff; }
+  .insurance-chart-card h4 { margin: 0 0 0.65rem; color: #244564; font-size: 1rem; }
+  .insurance-text-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem; background: #fff; }
+  .insurance-text-card ul { margin: 0; padding-left: 1.15rem; }
+  .insurance-chart-box { position: relative; width: 100%; height: 280px; }
+  .scenario-insurance-action { margin: 0.35rem 0 0.85rem; }
+  .scenario-insurance-action form { display: inline-block; margin: 0; }
+  @media (max-width: 900px) { .insurance-member-row { grid-template-columns: 1fr; } }
+</style>
 {% endblock %}
 {% block content %}
 {% if client_code %}
 <div class="success-banner">
   {% if lang == "en" %}
   Client {{ client_code }} ({{ client_name }}) has been saved.
-  <a href="/questionnaire/load/{{ client_code }}?lang={{ lang }}" style="margin-left: 0.5rem;">Edit</a>
+  <form action="/questionnaire/review" method="post" style="display:inline-block; margin-left: 0.5rem;">
+    <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+    <input type="hidden" name="current_year" value="{{ current_year }}">
+    <input type="hidden" name="client_code" value="{{ client_code }}">
+    <input type="hidden" name="lang" value="{{ lang }}">
+    <button type="submit" class="btn-link">Edit</button>
+  </form>
   <a href="/?lang={{ lang }}" style="margin-left: 0.5rem;">← Client List</a>
   {% else %}
   客户 {{ client_code }}（{{ client_name }}）已保存。
-  <a href="/questionnaire/load/{{ client_code }}?lang={{ lang }}" style="margin-left: 0.5rem;">编辑问卷</a>
+  <form action="/questionnaire/review" method="post" style="display:inline-block; margin-left: 0.5rem;">
+    <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+    <input type="hidden" name="current_year" value="{{ current_year }}">
+    <input type="hidden" name="client_code" value="{{ client_code }}">
+    <input type="hidden" name="lang" value="{{ lang }}">
+    <button type="submit" class="btn-link">编辑问卷</button>
+  </form>
   <a href="/?lang={{ lang }}" style="margin-left: 0.5rem;">← 客户列表</a>
   {% endif %}
 </div>
 {% endif %}
 <div class="playbook-actions">
   <a href="/?lang={{ lang }}" class="btn-secondary">{% if lang == "en" %}← Client List{% else %}← 客户列表{% endif %}</a>
+  <form action="/questionnaire/review" method="post">
+    <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+    <input type="hidden" name="current_year" value="{{ current_year }}">
+    <input type="hidden" name="client_code" value="{{ client_code }}">
+    <input type="hidden" name="lang" value="{{ lang }}">
+    <button type="submit" class="btn-secondary">{% if lang == "en" %}Edit Questionnaire{% else %}编辑问卷{% endif %}</button>
+  </form>
   <a href="data:text/markdown;charset=utf-8,{{ playbook_md|urlencode }}" download="playbook.md" class="btn-secondary">📥 {% if lang == "en" %}Download Markdown{% else %}下载 Markdown{% endif %}</a>
 </div>
 
@@ -33,6 +65,17 @@
       {{ playbook_html | safe }}
     </article>
   </div>
+</div>
+
+<div id="insurance-recommendation-form-template" hidden>
+  <form action="/insurance-planner/recommendation" method="post">
+    <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+    <input type="hidden" name="current_year" value="{{ current_year }}">
+    <input type="hidden" name="client_code" value="{{ client_code }}">
+    <input type="hidden" name="lang" value="{{ lang }}">
+    <input type="hidden" name="focus_plan" value="">
+    <button type="submit" class="btn-secondary"></button>
+  </form>
 </div>
 
 <script>
@@ -107,6 +150,39 @@ document.addEventListener('DOMContentLoaded', function() {
         card.appendChild(cursor);
         cursor = next;
       }
+    });
+
+    [
+      {
+        prefixZh: 'D3. 方案 A',
+        prefixEn: 'D3. Plan A',
+        focus: 'core',
+        labelZh: '打开方案A保险配置回填页',
+        labelEn: 'Open Plan A insurance input page'
+      },
+      {
+        prefixZh: 'D4. 方案 B',
+        prefixEn: 'D4. Plan B',
+        focus: 'balanced',
+        labelZh: '打开方案B保险配置回填页',
+        labelEn: 'Open Plan B insurance input page'
+      }
+    ].forEach(function(item) {
+      var heading = Array.from(articleEl.querySelectorAll('h3')).find(function(node) {
+        var text = (node.textContent || '').trim();
+        return text.indexOf(item.prefixZh) === 0 || text.indexOf(item.prefixEn) === 0;
+      });
+      var templateHost = document.getElementById('insurance-recommendation-form-template');
+      if (!heading || !templateHost) return;
+      var templateForm = templateHost.querySelector('form');
+      if (!templateForm) return;
+      var wrapper = document.createElement('div');
+      wrapper.className = 'scenario-insurance-action';
+      var form = templateForm.cloneNode(true);
+      form.querySelector('input[name="focus_plan"]').value = item.focus;
+      form.querySelector('button').textContent = window.__lang === 'en' ? item.labelEn : item.labelZh;
+      wrapper.appendChild(form);
+      heading.insertAdjacentElement('afterend', wrapper);
     });
   }
 
@@ -784,6 +860,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
     }
+  }
+
+  var insuranceChartDataEl = document.getElementById('insurance-playbook-chart-data');
+  if (insuranceChartDataEl && window.Chart) {
+    var insuranceMembers = [];
+    try { insuranceMembers = JSON.parse(insuranceChartDataEl.textContent); } catch(e) { insuranceMembers = []; }
+
+    insuranceMembers.forEach(function(member, idx) {
+      var gapCtx = document.getElementById('playbook-gap-chart-' + idx);
+      if (gapCtx) {
+        new Chart(gapCtx, {
+          type: 'bar',
+          data: {
+            labels: member.coverage_labels.map(bucketLabel),
+            datasets: [
+              { label: tp('当前', 'Current'), data: member.current_coverage, backgroundColor: 'rgba(100, 116, 139, 0.75)' },
+              { label: tp('目标', 'Target'), data: member.target_coverage, backgroundColor: 'rgba(37, 99, 235, 0.75)' }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { ticks: { callback: moneyTick } } }
+          }
+        });
+      }
+
+      [
+        ['core', member.plan_a_coverage, tp('方案 A', 'Plan A'), 'rgba(22, 163, 74, 0.72)'],
+        ['balanced', member.plan_b_coverage, tp('方案 B', 'Plan B'), 'rgba(234, 179, 8, 0.75)']
+      ].forEach(function(entry) {
+        var key = entry[0];
+        var coverageData = entry[1];
+        var planLabel = entry[2];
+        var color = entry[3];
+
+        var coverageCtx = document.getElementById('playbook-' + key + '-coverage-chart-' + idx);
+        if (coverageCtx) {
+          new Chart(coverageCtx, {
+            type: 'bar',
+            data: {
+              labels: member.coverage_labels.map(bucketLabel),
+              datasets: [
+                { label: tp('当前', 'Current'), data: member.current_coverage, backgroundColor: 'rgba(100, 116, 139, 0.75)' },
+                { label: planLabel, data: coverageData, backgroundColor: color },
+                { label: tp('目标', 'Target'), data: member.target_coverage, backgroundColor: 'rgba(37, 99, 235, 0.28)', borderColor: 'rgb(37, 99, 235)', borderWidth: 1 }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } },
+              scales: { y: { ticks: { callback: moneyTick } } }
+            }
+          });
+        }
+      });
+    });
   }
 
 });

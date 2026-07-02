@@ -24,6 +24,10 @@ app.mount(
 )
 
 # 路由(延迟 import 避免循环)
+from asset_planner.routes import router as asset_planner_router  # noqa: E402
+from insurance_planner.routes import router as insurance_planner_router  # noqa: E402
 from web.routes import router  # noqa: E402
 
 app.include_router(router)
+app.include_router(asset_planner_router)
+app.include_router(insurance_planner_router)

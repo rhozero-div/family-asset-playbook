@@ -83,6 +83,12 @@ After generation, review the following in order:
    - Does the bucket structure align with the event order?
    - Do initial allocation, annual surplus routing, and bucket charts remain internally consistent?
 
+5. **Insurance Structure Suggestion**
+   - Do the gap summary, Plan A, and Plan B all appear?
+   - Do the member-level charts match the text beside them?
+   - Do the Plan A / Plan B buttons open the insurance input page correctly?
+   - If you re-run from that page, are the recommended additions merged back into the original questionnaire rather than replacing the existing insurance rows?
+
 ## 6. QMC Dependency Check
 
 If the runtime cannot resolve `qmc`, the return-based projection path may fail or degrade.

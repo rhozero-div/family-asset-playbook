@@ -38,6 +38,10 @@ class Member:
     medical_premium: float = 0.0
     medical_pay_years: int = 0
     hci_coverage: float = 0.0
+    hci_premium: float = 0.0
+    hci_pay_years: int = 0
+    other_insurance_premium: float = 0.0
+    other_insurance_pay_years: int = 0
     healthcare_starting_annual: float = 0.0
     healthcare_growth_rate: float = 0.05
     healthcare_annual_cap: float = 0.0
@@ -158,6 +162,8 @@ def _parse_insurance(assets: dict) -> dict:
         "ci_cov": 0.0, "ci_premium": 0.0, "ci_pay_years": 0,
         "medical_covered": False, "medical_premium": 0.0,
         "medical_pay_years": 0,
+        "hci_cov": 0.0, "hci_premium": 0.0, "hci_pay_years": 0,
+        "other_premium": 0.0, "other_pay_years": 0,
         "total_premium": 0.0, "hint": "",
     }
     if not isinstance(assets, dict):
@@ -179,10 +185,17 @@ def _parse_insurance(assets: dict) -> dict:
         result["medical_covered"] = True
     result["medical_premium"] += float(ins.get("medical_premium", 0))
     result["medical_pay_years"] = int(ins.get("medical_pay_years", 0))
+    result["hci_cov"] += float(ins.get("hci_coverage", 0))
+    result["hci_premium"] += float(ins.get("hci_premium", 0))
+    result["hci_pay_years"] = int(ins.get("hci_pay_years", 0))
+    result["other_premium"] += float(ins.get("other_insurance_premium", 0))
+    result["other_pay_years"] = int(ins.get("other_insurance_pay_years", 0))
 
     result["total_premium"] += (result["term_life_premium"]
                                  + result["ci_premium"]
-                                 + result["medical_premium"])
+                                 + result["medical_premium"]
+                                 + result["hci_premium"]
+                                 + result["other_premium"])
     return result
 
 
@@ -249,6 +262,8 @@ def load_profile(path: str | Path, *, current_year: int | None = None) -> Client
         "term_life_cov": 0.0, "term_life_premium": 0.0, "term_life_pay_years": 0,
         "ci_cov": 0.0, "ci_premium": 0.0, "ci_pay_years": 0,
         "medical_covered": False, "medical_premium": 0.0, "medical_pay_years": 0,
+        "hci_cov": 0.0, "hci_premium": 0.0, "hci_pay_years": 0,
+        "other_premium": 0.0, "other_pay_years": 0,
         "total_premium": 0.0, "hint": "",
     }
     member_reimb_rates = []
@@ -292,19 +307,38 @@ def load_profile(path: str | Path, *, current_year: int | None = None) -> Client
 
                 # 逐人保险 (累计到 ins_data)
                 tl_cov = float(m.get("term_life_coverage", 0))
-                if tl_cov > 0:
+                tl_premium = float(m.get("term_life_premium", 0))
+                tl_pay_years = int(m.get("term_life_pay_years", 0))
+                if tl_cov > 0 or tl_premium > 0:
                     ins_data["term_life_cov"] += tl_cov
-                    ins_data["term_life_premium"] += float(m.get("term_life_premium", 0))
-                    ins_data["term_life_pay_years"] = max(ins_data.get("term_life_pay_years", 0), int(m.get("term_life_pay_years", 0)))
+                    ins_data["term_life_premium"] += tl_premium
+                    ins_data["term_life_pay_years"] = max(ins_data.get("term_life_pay_years", 0), tl_pay_years)
                 ci_cov = float(m.get("critical_illness_coverage", 0))
-                if ci_cov > 0:
+                ci_premium = float(m.get("critical_illness_premium", 0))
+                ci_pay_years = int(m.get("critical_illness_pay_years", 0))
+                if ci_cov > 0 or ci_premium > 0:
                     ins_data["ci_cov"] += ci_cov
-                    ins_data["ci_premium"] += float(m.get("critical_illness_premium", 0))
-                    ins_data["ci_pay_years"] = max(ins_data.get("ci_pay_years", 0), int(m.get("critical_illness_pay_years", 0)))
-                if m.get("medical_covered"):
-                    ins_data["medical_covered"] = True
-                    ins_data["medical_premium"] += float(m.get("medical_premium", 0))
-                    ins_data["medical_pay_years"] = max(ins_data.get("medical_pay_years", 0), int(m.get("medical_pay_years", 0)))
+                    ins_data["ci_premium"] += ci_premium
+                    ins_data["ci_pay_years"] = max(ins_data.get("ci_pay_years", 0), ci_pay_years)
+                medical_premium = float(m.get("medical_premium", 0))
+                medical_pay_years = int(m.get("medical_pay_years", 0))
+                if m.get("medical_covered") or medical_premium > 0:
+                    if m.get("medical_covered"):
+                        ins_data["medical_covered"] = True
+                    ins_data["medical_premium"] += medical_premium
+                    ins_data["medical_pay_years"] = max(ins_data.get("medical_pay_years", 0), medical_pay_years)
+                hci_cov = float(m.get("hci_coverage", 0))
+                hci_premium = float(m.get("hci_premium", 0))
+                hci_pay_years = int(m.get("hci_pay_years", 0))
+                if hci_cov > 0 or hci_premium > 0:
+                    ins_data["hci_cov"] += hci_cov
+                    ins_data["hci_premium"] += hci_premium
+                    ins_data["hci_pay_years"] = max(ins_data.get("hci_pay_years", 0), hci_pay_years)
+                other_insurance_premium = float(m.get("other_insurance_premium", 0))
+                other_insurance_pay_years = int(m.get("other_insurance_pay_years", 0))
+                if other_insurance_premium > 0:
+                    ins_data["other_premium"] += other_insurance_premium
+                    ins_data["other_pay_years"] = max(ins_data.get("other_pay_years", 0), other_insurance_pay_years)
 
                 # 逐人医疗参数
                 hc_start_member = float(m.get("healthcare_starting_annual", 0))
@@ -326,15 +360,19 @@ def load_profile(path: str | Path, *, current_year: int | None = None) -> Client
                     retirement_annuity=ret_annuity_val,
                     retirement_expense_coeff=coeff,
                     term_life_coverage=tl_cov,
-                    term_life_premium=float(m.get("term_life_premium", 0)),
-                    term_life_pay_years=int(m.get("term_life_pay_years", 0)),
+                    term_life_premium=tl_premium,
+                    term_life_pay_years=tl_pay_years,
                     critical_illness_coverage=ci_cov,
-                    critical_illness_premium=float(m.get("critical_illness_premium", 0)),
-                    critical_illness_pay_years=int(m.get("critical_illness_pay_years", 0)),
+                    critical_illness_premium=ci_premium,
+                    critical_illness_pay_years=ci_pay_years,
                     medical_covered=bool(m.get("medical_covered", False)),
-                    medical_premium=float(m.get("medical_premium", 0)),
-                    medical_pay_years=int(m.get("medical_pay_years", 0)),
-                    hci_coverage=float(m.get("hci_coverage", 0)),
+                    medical_premium=medical_premium,
+                    medical_pay_years=medical_pay_years,
+                    hci_coverage=hci_cov,
+                    hci_premium=hci_premium,
+                    hci_pay_years=hci_pay_years,
+                    other_insurance_premium=other_insurance_premium,
+                    other_insurance_pay_years=other_insurance_pay_years,
                     healthcare_starting_annual=hc_start_member,
                     healthcare_growth_rate=hc_growth_member,
                     healthcare_annual_cap=hc_cap_member,
@@ -405,7 +443,9 @@ def load_profile(path: str | Path, *, current_year: int | None = None) -> Client
     # 成员数据优先; 成员未填写时回退到 assets 格式
     for k in ("term_life_cov", "term_life_premium", "term_life_pay_years",
               "ci_cov", "ci_premium", "ci_pay_years",
-              "medical_covered", "medical_premium", "medical_pay_years"):
+              "medical_covered", "medical_premium", "medical_pay_years",
+              "hci_cov", "hci_premium", "hci_pay_years",
+              "other_premium", "other_pay_years"):
         if ins_data.get(k, 0) == 0 or k == "medical_covered":
             if k in parsed and (k != "medical_covered" or parsed.get(k)):
                 ins_data[k] = parsed[k]
@@ -420,6 +460,14 @@ def load_profile(path: str | Path, *, current_year: int | None = None) -> Client
         {"amount": float(s["amount"]), "premium": float(s.get("premium", 0)),
          "pay_years": int(s.get("pay_years", 0)), "linked_account": str(s.get("linked_account", ""))}
         for s in savings_raw if isinstance(s, dict) and s.get("amount", 0) > 0
+    )
+    ins_data["total_premium"] = (
+        ins_data["term_life_premium"]
+        + ins_data["ci_premium"]
+        + ins_data["medical_premium"]
+        + ins_data["hci_premium"]
+        + ins_data["other_premium"]
+        + sum(item["premium"] for item in savings)
     )
 
     # 赔付率: 从成员逐人读取(取最大值),回退到 assumptions.projection

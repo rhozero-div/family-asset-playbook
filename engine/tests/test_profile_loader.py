@@ -163,6 +163,39 @@ class TestLoadProfile(unittest.TestCase):
         finally:
             Path(path).unlink()
 
+    def test_existing_premiums_include_hci_other_and_savings(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as f:
+            f.write(
+                "profile_version: '0.1'\n"
+                "schema_version: 'handbook-v0.1'\n"
+                "family:\n"
+                "  members:\n"
+                "    - name: 王先生\n"
+                "      age: 38\n"
+                "      role: primary_breadwinner\n"
+                "      annual_income: 600000\n"
+                "      monthly_expense: 10000\n"
+                "      term_life_premium: 1200\n"
+                "      critical_illness_premium: 2400\n"
+                "      medical_covered: true\n"
+                "      medical_premium: 1800\n"
+                "      hci_premium: 3600\n"
+                "      other_insurance_premium: 600\n"
+                "events: []\n"
+                "assets:\n"
+                "  financial:\n"
+                "    savings:\n"
+                "      - amount: 200000\n"
+                "        premium: 3000\n"
+                "        pay_years: 5\n"
+            )
+            path = f.name
+        try:
+            profile = load_profile(path, current_year=2026)
+            self.assertEqual(profile.insurance_total_annual_premium, 12600)
+        finally:
+            Path(path).unlink()
+
 
 class TestEventParsing(unittest.TestCase):
     """Event 字段解析。"""

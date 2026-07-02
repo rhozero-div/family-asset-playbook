@@ -208,7 +208,9 @@ def _iter_insurance(assets: dict) -> list[tuple[str, dict]]:
 def _validate_insurance(ins: dict, loc: str, errors: list[str]) -> None:
     opts = ("term_life_coverage", "term_life_premium",
             "critical_illness_coverage", "critical_illness_premium",
-            "savings_value", "savings_premium", "medical_premium")
+            "savings_value", "savings_premium", "medical_premium",
+            "hci_coverage", "hci_premium",
+            "other_insurance_premium")
     for key in opts:
         val = ins.get(key)
         if val is not None and not isinstance(val, (int, float)):

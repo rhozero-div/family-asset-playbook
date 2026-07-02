@@ -470,7 +470,7 @@ function syncExpenseRows() {
     'member-retire-coeff'
   ]);
   var html = '<table class="form-table expense-table">';
-  html += '<tr><th class="align-left">' + t('成员', 'Member') + '</th><th>' + t('当前月支出(元)', 'Current monthly spending (RMB)') + '</th><th>' + t('退休后支出系数', 'Retirement spending factor') + '</th></tr>';
+  html += '<tr><th class="align-left">' + t('成员', 'Member') + '</th><th>' + t('当前月支出(元,不含保费)', 'Current monthly spending (RMB, excluding insurance premiums)') + '</th><th>' + t('退休后支出系数', 'Retirement spending factor') + '</th></tr>';
   members.forEach(function(member, idx) {
     var old = existing[idx] || {};
     html += '<tr class="expense-row">';
@@ -490,30 +490,44 @@ function syncInsuranceRows() {
   var existing = readExistingRows('#insurance-rows', 'ins-row', [
     'ins-medical',
     'ins-term-cov',
+    'ins-term-premium',
+    'ins-term-pay-years',
     'ins-hci-cov',
+    'ins-hci-premium',
+    'ins-hci-pay-years',
     'ins-ci-cov',
+    'ins-ci-premium',
+    'ins-ci-pay-years',
+    'ins-medical-premium',
+    'ins-medical-pay-years',
+    'ins-other-premium',
+    'ins-other-pay-years',
     'ins-reimb-rate',
     'ins-hc-starting',
     'ins-hc-growth',
     'ins-hc-cap'
   ]);
-  var html = '<table class="form-table ins-table">';
-  html += '<tr><th class="align-left">' + t('成员', 'Member') + '</th><th>' + t('医保', 'Public medical') + '</th><th>' + t('定寿保额(元)', 'Term life coverage (RMB)') + '</th><th>' + t('高端医疗险保额(元)', 'High-end medical coverage (RMB)') + '</th><th>' + t('重疾险保额(元)', 'Critical illness coverage (RMB)') + '</th><th>' + t('报销比例', 'Reimbursement ratio') + '</th><th>' + t('退休医疗年支出(元)', 'Retirement healthcare (RMB/year)') + '</th><th>' + t('年增长率', 'Growth rate') + '</th><th>' + t('年度封顶(元)', 'Annual cap (RMB)') + '</th></tr>';
+  var html = '<div class="dynamic-list insurance-card-list">';
   members.forEach(function(member, idx) {
     var old = existing[idx] || {};
-    html += '<tr class="ins-row">';
-    html += '<td class="align-left"><strong>' + member.name + '</strong></td>';
-    html += '<td><select class="ins-medical table-input-sm"><option value="">—</option><option value="true"' + (old['ins-medical'] === 'true' ? ' selected' : '') + '>' + t('有', 'Yes') + '</option><option value="false"' + (old['ins-medical'] === 'false' ? ' selected' : '') + '>' + t('无', 'No') + '</option></select></td>';
-    html += '<td><input type="number" class="ins-term-cov table-input-md" value="' + (old['ins-term-cov'] || '') + '" min="0"></td>';
-    html += '<td><input type="number" class="ins-hci-cov table-input-md" value="' + (old['ins-hci-cov'] || '') + '" min="0"></td>';
-    html += '<td><input type="number" class="ins-ci-cov table-input-md" value="' + (old['ins-ci-cov'] || '') + '" min="0"></td>';
-    html += '<td><input type="number" class="ins-reimb-rate table-input-sm" value="' + (old['ins-reimb-rate'] || '0.8') + '" min="0" max="1" step="0.05"></td>';
-    html += '<td><input type="number" class="ins-hc-starting table-input-md" value="' + (old['ins-hc-starting'] || '') + '" min="0"></td>';
-    html += '<td><input type="number" class="ins-hc-growth table-input-sm" value="' + (old['ins-hc-growth'] || '0.05') + '" min="0" max="1" step="0.01"></td>';
-    html += '<td><input type="number" class="ins-hc-cap table-input-md" value="' + (old['ins-hc-cap'] || '') + '" min="0"></td>';
-    html += '</tr>';
+    html += '<div class="subpanel-card ins-row insurance-member-card">';
+    html += '<h4 class="panel-subtitle">' + member.name + '</h4>';
+    html += '<div class="table-scroll"><table class="form-table insurance-table">';
+    html += '<thead><tr><th class="align-left">' + t('险种', 'Product') + '</th><th>' + t('状态/保额', 'Status/Coverage') + '</th><th>' + t('年保费', 'Annual premium') + '</th><th>' + t('剩余缴费年数', 'Remaining pay years') + '</th></tr></thead><tbody>';
+    html += '<tr><td class="align-left">' + t('基础医疗报销', 'Basic medical reimbursement') + '</td><td><select class="ins-medical"><option value="">—</option><option value="true"' + (old['ins-medical'] === 'true' ? ' selected' : '') + '>' + t('已覆盖', 'Covered') + '</option><option value="false"' + (old['ins-medical'] === 'false' ? ' selected' : '') + '>' + t('未覆盖', 'Not covered') + '</option></select></td><td><input type="number" class="ins-medical-premium table-input-sm" value="' + (old['ins-medical-premium'] || '') + '" min="0" step="100"></td><td><input type="number" class="ins-medical-pay-years table-input-sm" value="' + (old['ins-medical-pay-years'] || '') + '" min="0" max="99"></td></tr>';
+    html += '<tr><td class="align-left">' + t('定期寿险', 'Term life') + '</td><td><input type="number" class="ins-term-cov table-input-md" value="' + (old['ins-term-cov'] || '') + '" min="0" step="10000"></td><td><input type="number" class="ins-term-premium table-input-sm" value="' + (old['ins-term-premium'] || '') + '" min="0" step="100"></td><td><input type="number" class="ins-term-pay-years table-input-sm" value="' + (old['ins-term-pay-years'] || '') + '" min="0" max="99"></td></tr>';
+    html += '<tr><td class="align-left">' + t('重疾险', 'Critical illness') + '</td><td><input type="number" class="ins-ci-cov table-input-md" value="' + (old['ins-ci-cov'] || '') + '" min="0" step="10000"></td><td><input type="number" class="ins-ci-premium table-input-sm" value="' + (old['ins-ci-premium'] || '') + '" min="0" step="100"></td><td><input type="number" class="ins-ci-pay-years table-input-sm" value="' + (old['ins-ci-pay-years'] || '') + '" min="0" max="99"></td></tr>';
+    html += '<tr><td class="align-left">' + t('高端医疗', 'High-end medical') + '</td><td><input type="number" class="ins-hci-cov table-input-md" value="' + (old['ins-hci-cov'] || '') + '" min="0" step="10000"></td><td><input type="number" class="ins-hci-premium table-input-sm" value="' + (old['ins-hci-premium'] || '') + '" min="0" step="100"></td><td><input type="number" class="ins-hci-pay-years table-input-sm" value="' + (old['ins-hci-pay-years'] || '') + '" min="0" max="99"></td></tr>';
+    html += '<tr><td class="align-left">' + t('其他保险', 'Other insurance') + '</td><td>—</td><td><input type="number" class="ins-other-premium table-input-sm" value="' + (old['ins-other-premium'] || '') + '" min="0" step="100"></td><td><input type="number" class="ins-other-pay-years table-input-sm" value="' + (old['ins-other-pay-years'] || '') + '" min="0" max="99"></td></tr>';
+    html += '</tbody></table></div>';
+    html += '<div class="field-row compact-row" style="margin-top:0.75rem;">';
+    html += '<div class="field narrow"><label>' + t('报销比例', 'Reimbursement ratio') + '</label><input type="number" class="ins-reimb-rate" value="' + (old['ins-reimb-rate'] || '0.8') + '" min="0" max="1" step="0.05"></div>';
+    html += '<div class="field"><label>' + t('退休医疗年支出(元)', 'Retirement healthcare (RMB/year)') + '</label><input type="number" class="ins-hc-starting" value="' + (old['ins-hc-starting'] || '') + '" min="0" step="100"></div>';
+    html += '<div class="field narrow"><label>' + t('年增长率', 'Growth rate') + '</label><input type="number" class="ins-hc-growth" value="' + (old['ins-hc-growth'] || '0.05') + '" min="0" max="1" step="0.01"></div>';
+    html += '<div class="field"><label>' + t('年度封顶(元)', 'Annual cap (RMB)') + '</label><input type="number" class="ins-hc-cap" value="' + (old['ins-hc-cap'] || '') + '" min="0" step="100"></div>';
+    html += '</div></div>';
   });
-  html += '</table>';
+  html += '</div>';
   container.innerHTML = html;
 }
 
@@ -528,6 +542,7 @@ function refreshMemberDrivenSections() {
 function updateFamilyTotals() {
   var totalIncome = 0;
   var totalExpense = 0;
+  var totalPremiumAnnual = 0;
 
   document.querySelectorAll('#income-rows .income-row').forEach(function(row) {
     var income = numVal(row, 'member-current-income');
@@ -545,13 +560,25 @@ function updateFamilyTotals() {
     var payment = numVal(row, 'liab-monthly');
     if (payment !== null) totalExpense += payment;
   });
+  document.querySelectorAll('#insurance-rows .ins-row').forEach(function(row) {
+    ['ins-term-premium', 'ins-ci-premium', 'ins-medical-premium', 'ins-hci-premium', 'ins-other-premium'].forEach(function(cls) {
+      var premium = numVal(row, cls);
+      if (premium !== null) totalPremiumAnnual += premium;
+    });
+  });
+  document.querySelectorAll('#savings-tbody .sav-row').forEach(function(row) {
+    var premium = numVal(row, 'sav-premium');
+    if (premium !== null) totalPremiumAnnual += premium;
+  });
 
   var incomeEl = document.getElementById('family-income-total');
   var expenseEl = document.getElementById('family-expense-total');
+  var premiumEl = document.getElementById('family-premium-total');
   var surplusEl = document.getElementById('family-surplus-total');
   if (incomeEl) incomeEl.textContent = '¥' + totalIncome.toLocaleString();
   if (expenseEl) expenseEl.textContent = '¥' + totalExpense.toLocaleString();
-  if (surplusEl) surplusEl.textContent = '¥' + Math.round(totalIncome / 12 - totalExpense).toLocaleString();
+  if (premiumEl) premiumEl.textContent = '¥' + Math.round(totalPremiumAnnual / 12).toLocaleString();
+  if (surplusEl) surplusEl.textContent = '¥' + Math.round(totalIncome / 12 - totalExpense - totalPremiumAnnual / 12).toLocaleString();
 }
 
 function eventMaxYear() {
@@ -667,10 +694,30 @@ function collectFormData() {
       if (med && med.value === 'false') m.medical_covered = false;
       var tl = numVal(insRow, 'ins-term-cov');
       if (tl !== null && tl > 0) m.term_life_coverage = tl;
+      var tlPremium = numVal(insRow, 'ins-term-premium');
+      if (tlPremium !== null) m.term_life_premium = tlPremium;
+      var tlPayYears = numVal(insRow, 'ins-term-pay-years');
+      if (tlPayYears !== null) m.term_life_pay_years = tlPayYears;
       var hci = numVal(insRow, 'ins-hci-cov');
       if (hci !== null && hci > 0) m.hci_coverage = hci;
+      var hciPremium = numVal(insRow, 'ins-hci-premium');
+      if (hciPremium !== null) m.hci_premium = hciPremium;
+      var hciPayYears = numVal(insRow, 'ins-hci-pay-years');
+      if (hciPayYears !== null) m.hci_pay_years = hciPayYears;
       var ci = numVal(insRow, 'ins-ci-cov');
       if (ci !== null && ci > 0) m.critical_illness_coverage = ci;
+      var ciPremium = numVal(insRow, 'ins-ci-premium');
+      if (ciPremium !== null) m.critical_illness_premium = ciPremium;
+      var ciPayYears = numVal(insRow, 'ins-ci-pay-years');
+      if (ciPayYears !== null) m.critical_illness_pay_years = ciPayYears;
+      var medicalPremium = numVal(insRow, 'ins-medical-premium');
+      if (medicalPremium !== null) m.medical_premium = medicalPremium;
+      var medicalPayYears = numVal(insRow, 'ins-medical-pay-years');
+      if (medicalPayYears !== null) m.medical_pay_years = medicalPayYears;
+      var otherPremium = numVal(insRow, 'ins-other-premium');
+      if (otherPremium !== null) m.other_insurance_premium = otherPremium;
+      var otherPayYears = numVal(insRow, 'ins-other-pay-years');
+      if (otherPayYears !== null) m.other_insurance_pay_years = otherPayYears;
       var rr = floatVal(insRow.querySelector('.ins-reimb-rate'));
       if (rr !== null) m.reimbursement_rate = rr;
       var hcStart = numVal(insRow, 'ins-hc-starting');
@@ -834,6 +881,22 @@ function collectFormData() {
   var measurementEndYear = numVal(document.getElementById('measurement_end_year'));
   if (measurementEndYear !== null) projection.measurement_end_year = measurementEndYear;
   if (Object.keys(projection).length > 0) assumptions.projection = projection;
+
+  var insurancePlanner = {};
+  var premiumCap = floatVal(document.querySelector('.as-ins-premium-cap'));
+  if (premiumCap !== null) insurancePlanner.manual_premium_cap_annual = premiumCap;
+  var budgetRatioPct = floatVal(document.querySelector('.as-ins-budget-ratio-pct'));
+  if (budgetRatioPct !== null) insurancePlanner.auto_budget_ratio_pct = budgetRatioPct;
+  mergeInto(insurancePlanner, '.as-ins-term-with-dependents', 'term_multiplier_with_dependents');
+  mergeInto(insurancePlanner, '.as-ins-term-without-dependents', 'term_multiplier_without_dependents');
+  mergeInto(insurancePlanner, '.as-ins-ci-income-multiple', 'ci_income_multiple');
+  mergeInto(insurancePlanner, '.as-ins-ci-expense-years', 'ci_expense_years');
+  mergeInto(insurancePlanner, '.as-ins-child-ci-target', 'child_ci_target');
+  mergeInto(insurancePlanner, '.as-ins-elder-ci-target', 'elder_ci_target');
+  mergeInto(insurancePlanner, '.as-ins-adult-buffer', 'adult_independence_buffer');
+  var includeHciEl = document.querySelector('.as-ins-include-hci');
+  if (includeHciEl) insurancePlanner.include_hci_upgrade = includeHciEl.value !== 'false';
+  if (Object.keys(insurancePlanner).length > 0) assumptions.insurance_planner = insurancePlanner;
   if (Object.keys(assumptions).length > 0) data.assumptions = assumptions;
 
   return data;
@@ -954,6 +1017,22 @@ function restoreAssumptions(data) {
   if (assumptions.projection && assumptions.projection.measurement_end_year != null) {
     svi('measurement_end_year', assumptions.projection.measurement_end_year);
   }
+  if (assumptions.insurance_planner) {
+    var ip = assumptions.insurance_planner;
+    if (ip.manual_premium_cap_annual != null) sviByClass('as-ins-premium-cap', ip.manual_premium_cap_annual);
+    if (ip.auto_budget_ratio_pct != null) sviByClass('as-ins-budget-ratio-pct', ip.auto_budget_ratio_pct);
+    if (ip.term_multiplier_with_dependents != null) sviByClass('as-ins-term-with-dependents', ip.term_multiplier_with_dependents);
+    if (ip.term_multiplier_without_dependents != null) sviByClass('as-ins-term-without-dependents', ip.term_multiplier_without_dependents);
+    if (ip.ci_income_multiple != null) sviByClass('as-ins-ci-income-multiple', ip.ci_income_multiple);
+    if (ip.ci_expense_years != null) sviByClass('as-ins-ci-expense-years', ip.ci_expense_years);
+    if (ip.child_ci_target != null) sviByClass('as-ins-child-ci-target', ip.child_ci_target);
+    if (ip.elder_ci_target != null) sviByClass('as-ins-elder-ci-target', ip.elder_ci_target);
+    if (ip.adult_independence_buffer != null) sviByClass('as-ins-adult-buffer', ip.adult_independence_buffer);
+    if (ip.include_hci_upgrade != null) {
+      var hciEl = document.querySelector('.as-ins-include-hci');
+      if (hciEl) hciEl.value = ip.include_hci_upgrade ? 'true' : 'false';
+    }
+  }
 }
 
 function restoreMemberDrivenData(data) {
@@ -979,8 +1058,18 @@ function restoreMemberDrivenData(data) {
       if (member.medical_covered === true) setVal(insRows[idx], 'ins-medical', 'true');
       if (member.medical_covered === false) setVal(insRows[idx], 'ins-medical', 'false');
       if (member.term_life_coverage != null) setVal(insRows[idx], 'ins-term-cov', member.term_life_coverage);
+      if (member.term_life_premium != null) setVal(insRows[idx], 'ins-term-premium', member.term_life_premium);
+      if (member.term_life_pay_years != null) setVal(insRows[idx], 'ins-term-pay-years', member.term_life_pay_years);
       if (member.hci_coverage != null) setVal(insRows[idx], 'ins-hci-cov', member.hci_coverage);
+      if (member.hci_premium != null) setVal(insRows[idx], 'ins-hci-premium', member.hci_premium);
+      if (member.hci_pay_years != null) setVal(insRows[idx], 'ins-hci-pay-years', member.hci_pay_years);
       if (member.critical_illness_coverage != null) setVal(insRows[idx], 'ins-ci-cov', member.critical_illness_coverage);
+      if (member.critical_illness_premium != null) setVal(insRows[idx], 'ins-ci-premium', member.critical_illness_premium);
+      if (member.critical_illness_pay_years != null) setVal(insRows[idx], 'ins-ci-pay-years', member.critical_illness_pay_years);
+      if (member.medical_premium != null) setVal(insRows[idx], 'ins-medical-premium', member.medical_premium);
+      if (member.medical_pay_years != null) setVal(insRows[idx], 'ins-medical-pay-years', member.medical_pay_years);
+      if (member.other_insurance_premium != null) setVal(insRows[idx], 'ins-other-premium', member.other_insurance_premium);
+      if (member.other_insurance_pay_years != null) setVal(insRows[idx], 'ins-other-pay-years', member.other_insurance_pay_years);
       if (member.reimbursement_rate != null) setVal(insRows[idx], 'ins-reimb-rate', member.reimbursement_rate);
       if (member.healthcare_starting_annual != null) setVal(insRows[idx], 'ins-hc-starting', member.healthcare_starting_annual);
       if (member.healthcare_growth_rate != null) setVal(insRows[idx], 'ins-hc-growth', member.healthcare_growth_rate);
@@ -1092,7 +1181,11 @@ function bindStaticEvents() {
     el.addEventListener('change', refreshMemberDrivenSections);
   });
 
-  document.querySelectorAll('#income-rows .member-current-income, #expense-rows .member-expense, #liabilities-list .liab-monthly, #household-extra-monthly').forEach(function(el) {
+  document.querySelectorAll(
+    '#income-rows .member-current-income, #expense-rows .member-expense, #liabilities-list .liab-monthly, #household-extra-monthly,' +
+    ' #insurance-rows .ins-term-premium, #insurance-rows .ins-ci-premium, #insurance-rows .ins-medical-premium,' +
+    ' #insurance-rows .ins-hci-premium, #insurance-rows .ins-other-premium, #savings-tbody .sav-premium'
+  ).forEach(function(el) {
     if (el.dataset.boundSummary === '1') return;
     el.dataset.boundSummary = '1';
     el.addEventListener('input', updateFamilyTotals);
@@ -1195,6 +1288,55 @@ document.addEventListener('DOMContentLoaded', function() {
     endYearEl.dataset.boundMeasurement = '1';
     endYearEl.addEventListener('input', validateMeasurementEndYear);
     endYearEl.addEventListener('change', validateMeasurementEndYear);
+  }
+
+  function postCurrentQuestionnaireTo(action) {
+    if (!validateMeasurementEndYear()) {
+      if (endYearEl) endYearEl.reportValidity();
+      return;
+    }
+    var data = collectFormData();
+    var yaml = toYAML(data, 0);
+    try {
+      sessionStorage.setItem('fapm_form_data', JSON.stringify(data));
+    } catch (err) {}
+
+    var postForm = document.createElement('form');
+    postForm.method = 'post';
+    postForm.action = action;
+    postForm.style.display = 'none';
+
+    function appendHidden(name, value) {
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      postForm.appendChild(input);
+    }
+
+    appendHidden('yaml_content', yaml);
+    appendHidden('current_year', currentYearEl ? currentYearEl.value : '');
+    appendHidden('client_code', window.__clientCode || '');
+    appendHidden('lang', window.__lang || 'zh');
+
+    document.body.appendChild(postForm);
+    postForm.submit();
+  }
+
+  var assetPlannerBtn = document.getElementById('open-asset-planner-btn');
+  if (assetPlannerBtn && assetPlannerBtn.dataset.boundAssetPlanner !== '1') {
+    assetPlannerBtn.dataset.boundAssetPlanner = '1';
+    assetPlannerBtn.addEventListener('click', function() {
+      postCurrentQuestionnaireTo('/asset-planner/analyze');
+    });
+  }
+
+  var insurancePlannerBtn = document.getElementById('open-insurance-planner-btn');
+  if (insurancePlannerBtn && insurancePlannerBtn.dataset.boundInsurancePlanner !== '1') {
+    insurancePlannerBtn.dataset.boundInsurancePlanner = '1';
+    insurancePlannerBtn.addEventListener('click', function() {
+      postCurrentQuestionnaireTo('/insurance-planner/analyze');
+    });
   }
 
   document.querySelectorAll('#events-tbody .evt-type').forEach(function(sel) {

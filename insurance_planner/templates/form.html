@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>保险规划原型</title>
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
+  <style>
+    .planner-shell { max-width: 1100px; margin: 0 auto; }
+    .planner-hero { border: 1px solid #dbe6f0; border-radius: 14px; padding: 1.1rem 1.2rem; margin-bottom: 1rem; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%); }
+    .planner-hero h1 { margin: 0 0 0.35rem; font-size: 1.55rem; color: #16324f; }
+    .planner-hero p { margin: 0.2rem 0; color: #566579; }
+    .planner-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; }
+    .planner-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.05rem; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .planner-card h3 { margin: 0 0 0.75rem; color: #1f3b57; }
+    .planner-card p { color: #546274; }
+    .planner-links a { display: inline-block; margin-right: 0.6rem; margin-bottom: 0.6rem; }
+    .planner-textarea { width: 100%; min-height: 620px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; line-height: 1.5; border: 1px solid #cbd5e0; border-radius: 8px; padding: 0.9rem; }
+    .helper-list { margin: 0; padding-left: 1.1rem; color: #526172; }
+    .helper-list li { margin-bottom: 0.5rem; }
+    .field-inline { display: flex; gap: 0.8rem; align-items: end; margin-bottom: 1rem; flex-wrap: wrap; }
+    .field-inline .field { flex: 1; min-width: 180px; }
+    .field-inline label { display: block; font-weight: 600; margin-bottom: 0.35rem; color: #3f4f61; }
+    .field-inline input[type="number"], .field-inline input[type="file"] { width: 100%; }
+    @media (max-width: 900px) { .planner-grid { grid-template-columns: 1fr; } .planner-textarea { min-height: 420px; } }
+  </style>
+</head>
+<body>
+  <main class="container planner-shell">
+    <section class="planner-hero">
+      <h1>保险规划原型</h1>
+      <p>这是一版独立于剧本的保险规划实验页。它会读取现有问卷 YAML，根据家庭收入、资产、现有保险与未来现金流压力，输出两套保险配置方向。</p>
+      <p>当前只做结构规划，不做产品推荐；保费测算先使用 mock 曲线，用来比较不同方案的压力与优先级。</p>
+    </section>
+
+    {% if error %}
+    <div class="error-banner"><strong>错误：</strong>{{ error }}</div>
+    {% endif %}
+
+    <div class="planner-grid">
+      <section class="planner-card">
+        <h3>输入问卷 YAML</h3>
+        {% if sample_name %}
+        <div class="success-banner">已载入：{{ sample_name }}</div>
+        {% endif %}
+        <form action="/insurance-planner/analyze" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="client_code" value="{{ client_code }}">
+          <div class="field-inline">
+            <div class="field">
+              <label for="manual_premium_cap_annual">客户希望的总年保费上限（元，可选）</label>
+              <input type="number" id="manual_premium_cap_annual" name="manual_premium_cap_annual" min="0" step="100" value="{{ form_values.get('manual_premium_cap_annual', '') }}">
+            </div>
+            <div class="field">
+              <label for="auto_budget_ratio_pct">若不手填上限，自动预算比例（占年收入%，可选）</label>
+              <input type="number" id="auto_budget_ratio_pct" name="auto_budget_ratio_pct" min="0" max="30" step="0.5" value="{{ form_values.get('auto_budget_ratio_pct', '') }}">
+            </div>
+          </div>
+          <div class="field-inline">
+            <div class="field">
+              <label for="term_multiplier_with_dependents">有子女/负债时，定寿目标倍数</label>
+              <input type="number" id="term_multiplier_with_dependents" name="term_multiplier_with_dependents" min="1" max="20" step="0.5" value="{{ form_values.get('term_multiplier_with_dependents', 7.0) }}">
+            </div>
+            <div class="field">
+              <label for="term_multiplier_without_dependents">无子女/低责任时，定寿目标倍数</label>
+              <input type="number" id="term_multiplier_without_dependents" name="term_multiplier_without_dependents" min="1" max="20" step="0.5" value="{{ form_values.get('term_multiplier_without_dependents', 4.0) }}">
+            </div>
+          </div>
+          <div class="field-inline">
+            <div class="field">
+              <label for="ci_income_multiple">重疾目标：收入倍数</label>
+              <input type="number" id="ci_income_multiple" name="ci_income_multiple" min="1" max="10" step="0.5" value="{{ form_values.get('ci_income_multiple', 3.0) }}">
+            </div>
+            <div class="field">
+              <label for="ci_expense_years">重疾目标：支出年数</label>
+              <input type="number" id="ci_expense_years" name="ci_expense_years" min="1" max="10" step="0.5" value="{{ form_values.get('ci_expense_years', 5.0) }}">
+            </div>
+          </div>
+          <div class="field-inline">
+            <div class="field">
+              <label for="child_ci_target">未成年人重疾目标（元）</label>
+              <input type="number" id="child_ci_target" name="child_ci_target" min="0" step="10000" value="{{ form_values.get('child_ci_target', 300000.0) }}">
+            </div>
+            <div class="field">
+              <label for="elder_ci_target">老人重疾目标（元）</label>
+              <input type="number" id="elder_ci_target" name="elder_ci_target" min="0" step="10000" value="{{ form_values.get('elder_ci_target', 300000.0) }}">
+            </div>
+          </div>
+          <div class="field-inline">
+            <div class="field">
+              <label for="include_hci_upgrade">是否考虑高端医疗/特需升级</label>
+              <select id="include_hci_upgrade" name="include_hci_upgrade">
+                <option value="true"{% if form_values.get('include_hci_upgrade', 'true') != 'false' %} selected{% endif %}>考虑</option>
+                <option value="false"{% if form_values.get('include_hci_upgrade') == 'false' %} selected{% endif %}>不考虑</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-inline">
+            <div class="field">
+              <label for="current_year">当前年份</label>
+              <input type="number" id="current_year" name="current_year" min="2020" max="2100" value="{{ current_year }}">
+            </div>
+            <div class="field">
+              <label for="yaml_file">或上传 YAML 文件</label>
+              <input type="file" id="yaml_file" name="yaml_file" accept=".yaml,.yml,text/yaml,text/plain">
+            </div>
+          </div>
+          <textarea id="yaml_content" name="yaml_content" class="planner-textarea" placeholder="把问卷导出的 YAML 粘贴到这里">{{ yaml_content }}</textarea>
+          <div style="margin-top: 1rem;">
+            <button type="submit" class="btn-primary">生成保险规划建议</button>
+            <button type="submit" formaction="/asset-planner/analyze" class="btn-secondary">转到资产规划</button>
+            <button type="submit" formaction="/questionnaire/generate" class="btn-secondary">生成剧本</button>
+            <button type="submit" formaction="/questionnaire/review" class="btn-secondary">返回问卷</button>
+            <a href="/insurance-planner/sample-wang" class="btn-secondary">载入王先生示例</a>
+            <a href="/" class="btn-secondary">返回首页</a>
+          </div>
+        </form>
+      </section>
+
+      <aside class="planner-card">
+        <h3>这版会做什么</h3>
+        <ul class="helper-list">
+          <li>先识别家庭责任期：收入来源、负债、受抚养人和未来 10 年重大支出。</li>
+          <li>先判断保障顺序：医疗报销、重疾、定寿，再到高端医疗等升级层。</li>
+          <li>再检查保费承受力：当前结余偏紧、未来节点有缺口时，会主动收紧新增保费预算。</li>
+          <li>最后给两套方向：一套优先把关键保障做足，一套尽量都先配一些。</li>
+        </ul>
+
+        <h3 style="margin-top: 1.2rem;">快捷入口</h3>
+        <div class="planner-links">
+          <a href="/asset-planner" class="btn-secondary">资产规划</a>
+          <a href="/insurance-planner/sample-wang" class="btn-secondary">王先生示例</a>
+          {% if storage_enabled %}
+            {% for client in clients %}
+            <a href="/insurance-planner/load/{{ client.code }}" class="btn-secondary">{{ client.name }}（{{ client.code }}）</a>
+            {% endfor %}
+          {% else %}
+            <p>当前是公开演示模式，因此这里只提供示例问卷。</p>
+          {% endif %}
+        </div>
+
+        <h3 style="margin-top: 1.2rem;">当前假设</h3>
+        <ul class="helper-list">
+          <li>保费曲线是 mock，用于测算“预算够不够”和“先后顺序怎么排”。</li>
+          <li>建议结果是保障结构规划，不涉及具体保险公司、具体产品条款或核保结果。</li>
+          <li>如果要进入真实方案，还需要结合年龄、健康情况、缴费期限和真实报价做二次测算。</li>
+        </ul>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

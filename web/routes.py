@@ -201,6 +201,49 @@ async def questionnaire_save(
     )
 
 
+@router.post("/questionnaire/review", response_class=HTMLResponse)
+async def questionnaire_review(
+    request: Request,
+    yaml_content: str = Form(default=""),
+    current_year: int = Form(default=2026),
+    client_code: str = Form(default=""),
+    lang: str = Form(default="zh"),
+):
+    """从 planner 等中间层返回问卷，并用当前 YAML 直接回填。"""
+    import yaml
+
+    yaml_text = yaml_content or ""
+    if not yaml_text.strip():
+        return templates.TemplateResponse(
+            "questionnaire.html",
+            _qi(request, error="没有可回填的问卷 YAML", client_code=client_code, lang=lang),
+            status_code=400,
+        )
+
+    try:
+        parsed_data = yaml.safe_load(yaml_text)
+    except yaml.YAMLError as exc:
+        return templates.TemplateResponse(
+            "questionnaire.html",
+            _qi(request, error=f"YAML 解析失败: {exc}", client_code=client_code, lang=lang),
+            status_code=400,
+        )
+
+    sample_json = json.dumps(parsed_data if isinstance(parsed_data, dict) else {}, ensure_ascii=False)
+    return templates.TemplateResponse(
+        "questionnaire.html",
+        _qi(
+            request,
+            yaml_content=yaml_text,
+            current_year=current_year,
+            client_code=client_code,
+            force_prefill=True,
+            sample_data_json=sample_json,
+            lang=lang,
+        ),
+    )
+
+
 @router.post("/questionnaire/generate", response_class=HTMLResponse)
 async def questionnaire_generate(
     request: Request,
@@ -248,6 +291,7 @@ async def questionnaire_generate(
             "request": request,
             "playbook_md": playbook_md,
             "playbook_html": playbook_html,
+            "yaml_content": yaml_text,
             "current_year": current_year,
             "client_code": code,
             "client_name": name,
@@ -278,6 +322,7 @@ async def playbook_view(request: Request, code: str):
             "request": request,
             "playbook_md": playbook_md,
             "playbook_html": playbook_html,
+            "yaml_content": yaml_text,
             "current_year": 2026,
             "client_code": code,
             "client_name": name,

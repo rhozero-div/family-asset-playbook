@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>资产规划建议</title>
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_version }}">
+  <style>
+    .report-shell { max-width: 1180px; margin: 0 auto; }
+    .report-hero { border: 1px solid #dbe6f0; border-radius: 14px; padding: 1.05rem 1.15rem; margin-bottom: 1rem; background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%); }
+    .report-hero h1 { margin: 0 0 0.3rem; font-size: 1.5rem; color: #16324f; }
+    .report-hero p { margin: 0.2rem 0; color: #566579; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin: 1rem 0; }
+    .metric-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem 1rem; background: #fff; }
+    .metric-label { color: #637487; font-size: 0.86rem; margin-bottom: 0.3rem; }
+    .metric-value { color: #16324f; font-size: 1.15rem; font-weight: 700; }
+    .section-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.05rem; background: #fff; margin-bottom: 1rem; }
+    .section-card h2 { margin: 0 0 0.8rem; color: #1f3b57; font-size: 1.2rem; }
+    .summary-list { margin: 0; padding-left: 1.1rem; color: #425266; }
+    .summary-list li { margin-bottom: 0.45rem; }
+    .actions { margin-bottom: 1rem; display: flex; gap: 0.7rem; flex-wrap: wrap; }
+    @media (max-width: 960px) { .metric-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 640px) { .metric-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container report-shell">
+    <div class="actions">
+      <form action="/questionnaire/review" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <button type="submit" class="btn-secondary">返回问卷</button>
+      </form>
+      <form action="/insurance-planner/analyze" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <button type="submit" class="btn-secondary">打开保险规划</button>
+      </form>
+      <form action="/questionnaire/generate" method="post">
+        <textarea name="yaml_content" hidden>{{ yaml_content }}</textarea>
+        <input type="hidden" name="current_year" value="{{ current_year }}">
+        <input type="hidden" name="client_code" value="{{ client_code }}">
+        <button type="submit" class="btn-secondary">生成剧本</button>
+      </form>
+      <a href="/" class="btn-secondary">返回首页</a>
+    </div>
+
+    <section class="report-hero">
+      <h1>{{ result.profile.family_name }}家庭资产规划分析</h1>
+      <p>这是一层介于问卷与客户剧本之间的顾问分析页。它先回答重大节点能不能覆盖，再把资金分层和阶段权重单独拉出来，便于顾问在不打断主剧本的情况下先把资产方案讨论顺。</p>
+    </section>
+
+    <section class="section-card">
+      <h2>家庭快照</h2>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">家庭年收入</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.profile.total_annual_income) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">家庭月结余</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.allocation.monthly_surplus) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">可投资金融资产</div>
+          <div class="metric-value">¥{{ "{:,.0f}".format(result.allocation.total_investable) }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">重大节点数量</div>
+          <div class="metric-value">{{ result.projections|length }}</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2>关键判断</h2>
+      <ul class="summary-list">
+        {% if result.all_nodes_covered %}
+        <li>当前录入的重大节点，在现有资料和假设下整体可覆盖。</li>
+        {% else %}
+        <li>当前资料下并非所有重大节点都能覆盖，最早缺口出现在 {{ result.earliest_shortfall.year }} 年的“{{ result.earliest_shortfall.description }}”。</li>
+        {% endif %}
+        <li>应急层当前按 {{ result.profile.liquidity_reserve_months or 6 }} 个月支出口径测算，建议金额约 ¥{{ "{:,.0f}".format(result.allocation.emergency.amount) }}。</li>
+        {% if result.allocation.surplus %}
+        <li>在完成应急层和事件 bucket 后，当前仍可形成“富余资金”账户，金额约 ¥{{ "{:,.0f}".format(result.allocation.surplus.amount) }}。</li>
+        {% else %}
+        <li>当前没有形成独立的富余资金账户，说明资产与未来节点之间仍偏紧，优先级应放在节点覆盖和 bucket 顺序上。</li>
+        {% endif %}
+      </ul>
+      {% if result.allocation.warnings %}
+      <div class="error-banner" style="margin-top: 0.9rem;">
+        {% for warning in result.allocation.warnings %}
+        <div>{{ warning }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="section-card">
+      <h2>重大节点覆盖检查</h2>
+      <table class="form-table">
+        <thead>
+          <tr>
+            <th>年份</th>
+            <th>节点</th>
+            <th>节点支出</th>
+            <th>到点累计</th>
+            <th>支出后余额</th>
+            <th>结果</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for node in result.projections %}
+          <tr>
+            <td>{{ node.year }}</td>
+            <td>{{ node.description }}</td>
+            <td>¥{{ "{:,.0f}".format(node.event_cost) }}</td>
+            <td>¥{{ "{:,.0f}".format(node.accumulated_savings) }}</td>
+            <td>¥{{ "{:,.0f}".format(node.balance_after) }}</td>
+            <td>{% if node.gap_or_surplus >= 0 %}可覆盖{% else %}缺口 ¥{{ "{:,.0f}".format(node.gap_or_surplus|abs) }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section-card">
+      <h2>阶段权重</h2>
+      <table class="form-table">
+        <thead>
+          <tr>
+            <th>阶段</th>
+            <th>距离节点</th>
+            <th>固收</th>
+            <th>权益</th>
+            <th>保险(储蓄)</th>
+            <th>另类</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in result.phase_rows %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.years_text }}</td>
+            <td>{{ "{:.1f}%".format(row.fixed_income) }}</td>
+            <td>{{ "{:.1f}%".format(row.equity) }}</td>
+            <td>{{ "{:.1f}%".format(row.insurance) }}</td>
+            <td>{{ "{:.1f}%".format(row.alternatives) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section-card">
+      <h2>资金分层</h2>
+      <table class="form-table">
+        <thead>
+          <tr>
+            <th>资金层</th>
+            <th>金额</th>
+            <th>时间层级</th>
+            <th>资金来源</th>
+            <th>建议权重</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ result.allocation.emergency.name }}</td>
+            <td>¥{{ "{:,.0f}".format(result.allocation.emergency.amount) }}</td>
+            <td>{{ result.allocation.emergency.time_label }}</td>
+            <td>{{ result.allocation.emergency.funding_source }}</td>
+            <td>{{ "{:.1f}".format(result.allocation.emergency.fi_weight) }}/{{ "{:.1f}".format(result.allocation.emergency.eq_weight) }}/{{ "{:.1f}".format(result.allocation.emergency.ins_weight) }}/{{ "{:.1f}".format(result.allocation.emergency.alt_weight) }}</td>
+            <td>{{ result.allocation.emergency.rationale }}</td>
+          </tr>
+          {% for bucket in result.allocation.node_buckets %}
+          <tr>
+            <td>{{ bucket.name }}</td>
+            <td>¥{{ "{:,.0f}".format(bucket.amount) }}</td>
+            <td>{{ bucket.time_label }}</td>
+            <td>{{ bucket.funding_source }}</td>
+            <td>{{ "{:.1f}".format(bucket.fi_weight) }}/{{ "{:.1f}".format(bucket.eq_weight) }}/{{ "{:.1f}".format(bucket.ins_weight) }}/{{ "{:.1f}".format(bucket.alt_weight) }}</td>
+            <td>{{ bucket.rationale }}</td>
+          </tr>
+          {% endfor %}
+          {% if result.allocation.surplus %}
+          <tr>
+            <td>{{ result.allocation.surplus.name }}</td>
+            <td>¥{{ "{:,.0f}".format(result.allocation.surplus.amount) }}</td>
+            <td>{{ result.allocation.surplus.time_label }}</td>
+            <td>{{ result.allocation.surplus.funding_source }}</td>
+            <td>{{ "{:.1f}".format(result.allocation.surplus.fi_weight) }}/{{ "{:.1f}".format(result.allocation.surplus.eq_weight) }}/{{ "{:.1f}".format(result.allocation.surplus.ins_weight) }}/{{ "{:.1f}".format(result.allocation.surplus.alt_weight) }}</td>
+            <td>{{ result.allocation.surplus.rationale }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
