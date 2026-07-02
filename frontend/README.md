@@ -38,3 +38,8 @@ http://127.0.0.1:3013
   - Public link to the live product demo
 - `NEXT_PUBLIC_PLAYBOOK_DEMO_URL`
   - Optional link to a specific playbook demo
+- `NEXT_PUBLIC_FAPM_HF_URL`
+  - Real Hugging Face app URL shown inside the demo shell
+- `NEXT_PUBLIC_FAPM_CF_URL`
+  - Optional explicit Cloudflare Pages URL
+  - If omitted, the demo shell links to itself with `/`

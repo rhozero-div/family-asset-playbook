@@ -15,9 +15,14 @@ export default function HomePage() {
             `asset-correlation-monitor`: Cloudflare Pages handles the public-facing
             demo shell, while Hugging Face Spaces runs the real FastAPI web entry.
           </p>
+          <p>
+            The public demo focuses on structure, reading flow, and product shape.
+            The real questionnaire, client saving flow, and playbook generation stay
+            on the Hugging Face side.
+          </p>
           <div className="cta-row">
             <a href={deployLinks.cloudflare} className="cta-primary">
-              Open Cloudflare Demo
+              Open This Demo Shell
             </a>
             <a href={deployLinks.huggingFace} className="cta-secondary">
               Open Hugging Face App

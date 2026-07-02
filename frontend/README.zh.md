@@ -40,3 +40,8 @@ http://127.0.0.1:3013
   - 线上产品演示地址
 - `NEXT_PUBLIC_PLAYBOOK_DEMO_URL`
   - 可选的剧本演示地址
+- `NEXT_PUBLIC_FAPM_HF_URL`
+  - 演示壳里显示的 Hugging Face 真实应用地址
+- `NEXT_PUBLIC_FAPM_CF_URL`
+  - 可选的 Cloudflare Pages 完整地址
+  - 如果不填，演示壳默认把 Cloudflare 入口链接到当前站点自身 `/`

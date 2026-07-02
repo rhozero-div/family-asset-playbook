@@ -1,8 +1,8 @@
 export const deployLinks = {
   huggingFace:
-    process.env.NEXT_PUBLIC_FAPM_HF_URL || "https://huggingface.co/spaces/your-space",
+    process.env.NEXT_PUBLIC_FAPM_HF_URL || "https://rhozero-div-family-asset-playbook.hf.space/",
   cloudflare:
-    process.env.NEXT_PUBLIC_FAPM_CF_URL || "https://your-project.pages.dev",
+    process.env.NEXT_PUBLIC_FAPM_CF_URL || "/",
 };
 
 export const familyMembers = [
@@ -21,7 +21,7 @@ export const majorEvents = [
 export const summaryBullets = [
   "Current financial assets plus future net cash flow are enough to cover the core recorded milestones, but the three years before the home purchase should stay more liquid.",
   "The surplus account is the long-term growth bucket; the demo uses a common outcome range to show long-run volatility without implying a promised return.",
-  "The insurance section only flags structural gaps. It does not recommend products or calculate target coverage amounts, so it stays within the current methodology boundary.",
+  "The insurance section shows the key protection gaps, two suggestion paths, and a follow-up advisor input loop instead of stopping at a single static recommendation.",
 ];
 
 export const bucketRows = [

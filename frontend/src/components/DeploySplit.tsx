@@ -10,7 +10,7 @@ export default function DeploySplit() {
           Built with Next.js static export into `out/`, this side is suited for a public-facing mock page that shows the questionnaire structure, playbook reading flow, and product tone.
         </p>
         <a href={deployLinks.cloudflare} className="inline-link">
-          Pages demo URL
+          Current demo shell
         </a>
       </div>
       <div className="split-card">
@@ -20,7 +20,7 @@ export default function DeploySplit() {
           Reuses the current `web.app:app` and runs it through Docker on HF, preserving the real workflow for saving questionnaires, generating playbooks, and browsing the client list.
         </p>
         <a href={deployLinks.huggingFace} className="inline-link">
-          Spaces demo URL
+          Open live HF app
         </a>
       </div>
     </section>
